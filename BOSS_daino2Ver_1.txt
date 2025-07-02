@@ -1,0 +1,1778 @@
+
+#include "U8glib.h"
+
+U8GLIB_SSD1306_128X64 u8g(U8G_I2C_OPT_NONE|U8G_I2C_OPT_DEV_0);  // I2C / TWI 
+long randNumber;
+#include <SoftwareSerial.h>
+SoftwareSerial Serial1(12,13);
+#include <avr/wdt.h>
+#include <EEPROM.h>
+//Arduinoをリセットする
+void software_reset() {
+    wdt_disable();
+    wdt_enable(WDTO_15MS);
+    while (1) {}
+} 
+byte Load_Bootstate() {
+    int state;
+    state = EEPROM.read(0);
+    return state;
+}
+ void Set_Bootstate(int state) {
+    EEPROM.write(0, state);
+}
+int stateD;             // pin states
+int stateF;             // pin states
+int adata = 0;           // rotate data
+
+
+unsigned char order[4] = {0xAA,0x06,0x00,0xB0};
+long number;
+void setup(){
+pinMode(2,INPUT_PULLUP);
+pinMode(3,OUTPUT); //big
+pinMode(4,OUTPUT); //reg
+pinMode(5,OUTPUT);//loss 暗転
+pinMode(6,OUTPUT);//回転数　BRハズレ
+pinMode(7,OUTPUT);//バイブ
+pinMode(8,OUTPUT);//光る(割り込みハイビスカス)
+pinMode(9,OUTPUT);//回転数リセット
+pinMode(15,OUTPUT);//mode
+pinMode(16,OUTPUT);//mode
+randomSeed(analogRead(3));
+ Serial1.begin(9600);
+pinMode(10,INPUT_PULLUP);//d 10液晶モード
+pinMode(11,OUTPUT);//d11カナランプ
+//d12.13 音源,ｄ14 モード切替,d17 ランダム,d18,19 液晶 
+u8g.setFont(u8g_font_courB18);
+  if ( u8g.getMode() == U8G_MODE_R3G3B2 ) {
+    u8g.setColorIndex(255);     // white
+  }
+  else if ( u8g.getMode() == U8G_MODE_GRAY2BIT ) {
+    u8g.setColorIndex(3);         // max intensity
+  }
+  else if ( u8g.getMode() == U8G_MODE_BW ) {
+    u8g.setColorIndex(1);         // pixel on
+  }
+  else if ( u8g.getMode() == U8G_MODE_HICOLOR ) {
+    u8g.setHiColorByRGB(255,255,255);
+  }
+
+ volume(0x1E);//Volume settings 0x00-0x1E
+    if (Load_Bootstate() == 0) { //メモリに0が書いてあるので再起動する
+        Set_Bootstate(1); //EEPROMに1を書いておく　次は通常起動
+        delay(500);
+        software_reset();
+    }
+    Set_Bootstate(0); //メモリに0を書いておく.
+
+    u8g.firstPage();  
+  do {
+     u8g.setColorIndex(1);
+u8g.drawStr( 21, 27, "KIMTECH");
+u8g.drawStr( 21, 55, "SLOT");
+} while ( u8g.nextPage() );
+delay(1000);
+
+v_blank();
+delay(200);
+}
+
+int vmode=0;//mo-do　　
+byte b_point = 1;
+byte reg_point = 1;
+byte st_point = 0;
+byte i = 1;//kakuhen 
+byte k = 0;
+int stateZ = LOW;
+
+void loop() {
+  // put your main code here, to run repeatedly:
+ 
+stateD = digitalRead(2);                // read
+   if ( stateD == 1 && stateF == 0 ) // plus count
+     adata++;
+     stateF = stateD;
+delay(10);
+switch(i){
+case 0:
+if(adata>=1){  
+number = random(1,65537);
+}
+break;
+case 1:
+if(adata>=1){  
+number = random(1,57000);//prem
+}
+break;
+}
+if( adata >= 1){
+adata -= 1;
+} 
+long moti =number;
+
+
+int s_set = analogRead(A0);
+stateZ =digitalRead(10);
+if(stateZ == HIGH){
+
+n_spv();
+}
+
+
+
+if((s_set >= 0)&&(s_set <= 350)){
+//green  　通常mode●
+digitalWrite(15,HIGH); 
+digitalWrite(16,LOW); 
+if(vmode == 10){
+if(moti ==0){//5or10fz 1:1   32768
+// reset
+s_reset();
+} 
+ else if((moti >= 1)&&(moti <= 8192)){  //1 8192
+// 2連
+s_big();
+st_point++;
+st_point++;
+
+vmode = 7;
+ }
+ else if((moti >= 8193)&&(moti <= 19114)){//1 10922
+// 9連 freez
+v_blank();
+delay(50);
+digitalWrite(11,HIGH);
+v_freeze();
+play(0x0b);//ぷちゅん
+delay(2400);
+delay(1000);
+digitalWrite(7,HIGH);
+delay(1000);
+digitalWrite(7,LOW);
+delay(400);
+digitalWrite(7,HIGH);
+delay(2000);
+digitalWrite(7,LOW);
+play(0x0a);//fan
+delay(5500);
+v_blank();
+delay(100);
+
+s_big();
+st_point++;
+st_point++;
+st_point++;
+st_point++;
+
+st_point++;
+st_point++;
+st_point++;
+st_point++;
+st_point++;
+vmode = 7;
+ }
+ else if((moti >= 19115)&&(moti <= 27306)){//2 8192
+// 2連
+s_big();
+st_point++;
+
+st_point++;
+vmode = 7;
+ }
+ else if((moti >= 27307)&&(moti <= 38228)){//2 10922
+// 9連 freez
+v_blank();
+delay(50);
+digitalWrite(11,HIGH);
+v_freeze();
+play(0x0b);//ぷちゅん
+delay(2400);
+delay(1000);
+digitalWrite(7,HIGH);
+delay(1000);
+digitalWrite(7,LOW);
+delay(400);
+digitalWrite(7,HIGH);
+delay(2000);
+digitalWrite(7,LOW);
+play(0x0a);//fan
+delay(5500);
+v_blank();
+delay(100);
+
+s_big();
+st_point++;
+st_point++;
+st_point++;
+st_point++;
+st_point++;
+st_point++;
+st_point++;
+st_point++;
+st_point++;
+vmode = 7;
+ }
+ else if((moti >= 38229)&&(moti <= 46420)){//3 8192
+// 2連
+s_big();
+st_point++;
+st_point++;
+vmode = 7;
+ }
+ else if((moti >= 46421)&&(moti <= 57342)){//3 10922
+// 9連 freez
+v_blank();
+delay(50);
+digitalWrite(11,HIGH);
+v_freeze();
+play(0x0b);//ぷちゅん
+delay(2400);
+delay(1000);
+digitalWrite(7,HIGH);
+delay(1000);
+digitalWrite(7,LOW);
+delay(400);
+digitalWrite(7,HIGH);
+delay(2000);
+digitalWrite(7,LOW);
+play(0x0a);//fan
+delay(5500);
+v_blank();
+delay(100);
+
+s_big();
+st_point++;
+st_point++;
+st_point++;
+st_point++;
+st_point++;
+st_point++;
+st_point++;
+st_point++;
+st_point++;
+vmode = 7;
+ }
+ else if((moti >= 57343)&&(moti <= 65537)){//4 8192
+// 2連
+s_big();
+st_point++;
+st_point++;
+
+vmode = 7;
+ }
+}
+
+
+
+if(vmode == 9){//ボーナスB
+if(moti ==0){
+// reset
+s_reset();
+}
+ else if((moti >= 1)&&(moti <= 65537)){
+// BIG 
+n_big1();
+vmode = 7;
+ }
+}
+
+
+if(vmode == 8){
+//大当たり準備　1／２でｂポイント付与滞在かMODE9へ  継続の1／２でST２ポイント
+if(moti ==0){
+// reset
+s_reset();
+}
+ else if((moti >= 1)&&(moti <= 6553)){//6553
+e_lgogo();
+b_point++;
+vmode = 9;
+ }
+ else if((moti >= 6554)&&(moti <= 26213)){
+// 告知　レバー→ガコ　音なし→先チカ　バイブ→音なしチカ
+e_gogo();
+b_point++;
+vmode = 9;
+ }
+ else if((moti >= 26214)&&(moti <= 32766)){
+e_pgogo();
+b_point++;
+vmode = 9;
+ }
+
+ else if((moti >= 32767)&&(moti <= 39319)){//tuuzyou 2 32768
+//遅れ　loss　
+n_loss3();
+st_point++;
+b_point++;
+ }
+ else if((moti >= 39320)&&(moti <= 45872)){
+// cher　
+e_cherry1();
+st_point++;
+b_point++;
+ }
+ else if((moti >= 45873)&&(moti <= 49872)){
+// 継続 遅れ　
+n_loss3();
+st_point++;
+b_point++;
+ }
+ else if((moti >= 49873)&&(moti <= 54426)){//4553
+// 継続 無音
+n_loss5();
+st_point++;
+b_point++;
+st_point++;
+b_point++;
+ }
+ else if((moti >= 54427)&&(moti <= 56427)){//2000
+// 継続 long遅れ　
+n_loss4();
+st_point++;
+b_point++;
+st_point++;
+b_point++;
+ }
+ else if((moti >= 56428)&&(moti <= 65537)){
+// 継続 遅れ　
+n_loss3();
+st_point++;
+b_point++;
+ }
+}
+
+if(vmode == 6){//ボーナス stポイント用  BR3:2  39321    26214
+if(moti ==0){
+// reset
+s_reset();
+}
+ else if((moti >= 1)&&(moti <= 8738)){ //REG1 8738
+n_REG1();
+vmode = 7;
+ }
+ else if((moti >= 8739)&&(moti <= 21846)){ //BIG1 13107
+digitalWrite(6,HIGH); 
+digitalWrite(11,LOW); 
+digitalWrite(3,HIGH);  
+digitalWrite(5,LOW);  
+play(0x04);
+delay(1400); 
+v_blank();
+delay(200);
+v_BIG();
+delay(400);
+k++;
+loop_big_s(k);
+if(k>=3){  
+k=0;
+}
+digitalWrite(3,LOW); 
+digitalWrite(9,HIGH);
+v_blank();
+delay(1000);
+vmode = 7;
+ }
+ else if((moti >= 21847)&&(moti <= 30585)){ //REG2 8738
+n_REG1();
+vmode = 7;
+ }
+ else if((moti >= 30586)&&(moti <= 43693)){ //BIG2 13107
+digitalWrite(6,HIGH); 
+digitalWrite(11,LOW); 
+digitalWrite(3,HIGH);  
+digitalWrite(5,LOW);  
+play(0x04);
+delay(1400); 
+v_blank();
+delay(200);
+v_BIG();
+delay(400);
+k++;
+loop_big_s(k);
+if(k>=3){  
+k=0;
+}
+digitalWrite(3,LOW); 
+digitalWrite(9,HIGH);
+v_blank();
+delay(1000);
+vmode = 7;
+ }
+ else if((moti >= 43694)&&(moti <= 52432)){ //REG3 8738
+n_REG1();
+vmode = 7;
+ }
+ else if((moti >= 52433)&&(moti <= 65537)){ //BIG3 13107
+digitalWrite(6,HIGH); 
+digitalWrite(11,LOW); 
+digitalWrite(3,HIGH);  
+digitalWrite(5,LOW);  
+play(0x04);
+delay(1400); 
+v_blank();
+delay(200);
+v_BIG();
+delay(400);
+k++;
+loop_big_s(k);
+if(k>=3){  
+k=0;
+}
+digitalWrite(3,LOW); 
+digitalWrite(9,HIGH);
+v_blank();
+delay(1000);
+vmode = 7;
+ }
+}
+
+
+
+
+if(vmode == 5){//ボーナスBR　9：１ 58983  6553
+
+if(moti ==0){
+// reset
+s_reset();
+}
+ else if((moti >= 1)&&(moti <= 2184)){//1 2184
+// REG
+s_REG1();
+reg_point++;
+vmode = 7;
+ }
+
+ else if((moti >= 2185)&&(moti <= 21846)){//1 19661
+// BIG 
+n_big1();
+vmode = 7;
+ }
+ else if((moti >= 21847)&&(moti <= 24031)){//2 2184
+// REG
+s_REG1();
+reg_point++;
+vmode = 7;
+ }
+ else if((moti >= 24032)&&(moti <= 43692)){//2 19661
+// BIG 
+n_big1();
+vmode = 7;
+ }
+ else if((moti >= 43693)&&(moti <= 45876)){//3 2184
+// REG
+s_REG1();
+reg_point++;
+vmode = 7;
+ }
+ else if((moti >= 45877)&&(moti <= 65537)){//3 19661
+// BIG 
+n_big1();
+vmode = 7;
+ }
+
+}
+
+
+
+
+
+
+if(vmode == 4){
+//大当たり準備　1／２でｂポイント付与滞在かMODE5へ  継続の1／２でST２ポイント
+if(moti ==0){
+// reset
+s_reset();
+}
+ else if((moti >= 1)&&(moti <= 3553)){//
+e_lgogo();
+b_point++;
+vmode = 5;
+ }
+ else if((moti >= 3554)&&(moti <= 26213)){
+// 告知　レバー→ガコ　音なし→先チカ　バイブ→音なしチカ
+e_gogo();
+b_point++;
+vmode = 5;
+ }
+ else if((moti >= 26214)&&(moti <= 32766)){
+e_pgogo();
+b_point++;
+vmode = 5;
+ }
+
+ else if((moti >= 32767)&&(moti <= 39319)){//tuuzyou 2 32768
+//遅れ　loss　
+n_loss3();
+st_point++;
+b_point++;
+ }
+ else if((moti >= 39320)&&(moti <= 45872)){
+// cher　
+e_cherry1();
+st_point++;
+b_point++;
+ }
+ else if((moti >= 45873)&&(moti <= 52425)){
+// 継続 遅れ　
+n_loss3();
+st_point++;
+b_point++;
+ }
+ else if((moti >= 52426)&&(moti <= 54426)){//2000
+// 継続 無音
+n_loss5();
+st_point++;
+b_point++;
+st_point++;
+b_point++;
+ }
+ else if((moti >= 54427)&&(moti <= 56427)){//2000
+// 継続 long遅れ　
+n_loss4();
+st_point++;
+b_point++;
+st_point++;
+b_point++;
+ }
+ else if((moti >= 56428)&&(moti <= 65537)){
+// 継続 遅れ　
+n_loss3();
+st_point++;
+b_point++;
+ }
+}
+
+if(vmode == 3){
+//遅れ
+if(moti ==0){
+// reset
+s_reset();
+}
+ else if((moti >= 1)&&(moti <= 65537)){
+// okure
+n_loss3();
+i=0;
+vmode = 4;
+ }
+}
+if(vmode == 2){
+//種有チェリーモード  ４割でチェリー、1／5で遅れモード３かモード７へ13107 26214。強チェも確定。l
+if(moti ==0){
+// reset
+s_reset();
+}
+ else if((moti >= 1)&&(moti <= 7107)){//転落13106　1／5
+n_loss();
+vmode = 7;
+ }
+ else if((moti >= 7108)&&(moti <= 13107)){//転落13106　1／5
+e_cherry1();
+vmode = 7;
+ }
+ else if((moti >= 13108)&&(moti <= 30607)){//チェリー17499
+e_cherry1();
+ }
+ else if((moti >= 30608)&&(moti <= 35608)){//hit5000　1／5
+e_cherry1();
+vmode = 3;
+ }
+ else if((moti >= 35609)&&(moti <= 40608)){//hit4999
+n_loss();
+vmode = 3;
+ }
+ else if((moti >= 40609)&&(moti <= 43716)){//強チェ 3107
+esp_cherry();
+vmode = 3;
+ }
+ else if((moti >= 43717)&&(moti <= 57540)){//hazure 13823
+n_loss();
+ }
+ else if((moti >= 57541)&&(moti <= 65537)){//チェリー7996
+e_cherry1();
+ }
+}
+if(vmode == 1){
+//種なしチェリーモード　約四割でチェリー 1/４で２以上へ昇格 １６３８４ 　　atari1/32 2000
+if(moti ==0){
+// reset
+s_reset();
+}
+ else if((moti >= 1)&&(moti <= 8637)){//チェリー8636
+e_cherry1();
+ }
+ else if((moti >= 8638)&&(moti <= 19638)){//loss 11000
+n_loss();
+}
+ else if((moti >= 19639)&&(moti <= 21638)){//強チェ 1999
+esp_cherry();
+vmode = 3;
+ }
+ else if((moti >= 21639)&&(moti <= 28831)){//チェ 7192
+e_cherry1();
+vmode = 2;
+ }
+ else if((moti >= 28832)&&(moti <= 36024)){//強チェ 7192
+esp_cherry();
+vmode = 2;
+ }
+ else if((moti >= 36025)&&(moti <= 41483)){//チェリー
+e_cherry1();
+ }
+ else if((moti >= 41484)&&(moti <= 54591)){//転落 13107
+n_loss();
+vmode = 7;
+ }
+ else if((moti >= 54592)&&(moti <= 65537)){//チェリー10944
+e_cherry1();
+ }
+}
+
+
+else if(vmode == 0){
+//通常モード　　1／162.9→1/27.8   489でモード1へ350  30 　1/344でモード2へ190 655 700  1/93.6 　ガセチェリー1／57.6　1138　１／10でゲートボーナス6390、モード５へ。
+//8192でフリーズ８　ｓｔｐＸ５  100でHImode   i=0  2000 1/32     1/279
+if(moti ==0){
+// reset
+s_reset();
+}
+ else if((moti >= 1)&&(moti <= 941)){
+ //loss
+n_loss();
+}
+ else if((moti >= 942)&&(moti <= 992)){//gaseチェリー 50 1
+e_cherry1();
+
+vmode = 1;
+}
+ else if((moti >= 993)&&(moti <= 1000)){//prem st6 b6
+ //prem
+crash();
+st_point++;
+st_point++;
+st_point++;
+st_point++;
+st_point++;
+st_point++;
+b_point++;
+b_point++;
+b_point++;
+b_point++;
+b_point++;
+b_point++;
+s_big();
+vmode = 7;
+}
+else if((moti >= 1001)&&(moti <= 1539)){//乱数リセット 538
+n_loss1();
+}
+ else if((moti >= 1540)&&(moti <= 1696)){
+ //loss
+n_loss();
+}
+
+
+ else if((moti >= 1697)&&(moti <= 1747)){
+ //loss
+n_loss();
+}
+ else if((moti >= 1748)&&(moti <= 2317)){//チェリー1 569
+e_cherry1();
+}
+
+ else if((moti >= 2318)&&(moti <= 15656)){//loss
+n_loss();
+}
+
+ else if((moti >= 15657)&&(moti <= 15717)){//hitチェリー60 1
+e_cherry1();
+vmode = 2;
+}
+ else if((moti >= 15718)&&(moti <= 16277)){//チェリー569 2
+e_cherry1();
+}
+ else if((moti >= 16278)&&(moti <= 20778)){//loss&gateボーナス4500_1
+ // st_BIG
+if (st_point >= 1){
+e_gogo();
+--st_point;
+vmode = 6;
+}
+else if(st_point <= 0){
+ // loss
+n_loss();
+}
+}
+ else if((moti >= 20779)&&(moti <= 21278)){//loss&gateボーナス500_2
+ // st_BIG
+if (st_point >= 1){
+e_lgogo();
+--st_point;
+vmode = 6;
+}
+else if(st_point <= 0){
+ // loss
+n_loss();
+}
+}
+ else if((moti >= 21279)&&(moti <= 21359)){//gaseチェリー 80 2
+e_cherry1();
+
+vmode = 1;
+}
+ else if((moti >= 21360)&&(moti <= 23178)){//loss 2730
+ // loss
+n_loss();
+
+}
+ else if((moti >= 23179)&&(moti <= 23279)){//gaseチェリー 100 3
+e_cherry1();
+
+vmode = 1;
+}
+ else if((moti >= 23280)&&(moti <= 24670)){//loss&gateボーナス1390_3
+ // st_BIG
+if (st_point >= 1){
+e_pgogo();
+--st_point;
+vmode = 6;
+}
+else if(st_point <= 0){
+ // loss
+n_loss();
+}
+}
+
+
+ else if((moti >= 24671)&&(moti <= 25171)){//loss hi 500
+n_loss2();
+i=1;
+}
+ else if((moti >= 25172)&&(moti <= 26990)){//loss
+n_loss();
+}
+
+ else if((moti >= 26991)&&(moti <= 27076)){//hitチェリー85 2
+e_cherry1();
+vmode = 2;
+}
+ else if((moti >= 27077)&&(moti <= 31000)){//loss
+n_loss();
+}
+ else if((moti >= 31001)&&(moti <= 31501)){//loss hi 500
+n_loss();
+i=1;
+}
+ else if((moti >= 31502)&&(moti <= 31046)){//hitチェリー45 3
+e_cherry1();
+vmode = 2;
+}
+ else if((moti >= 31047)&&(moti <= 34000)){//loss
+n_loss();
+}
+ else if((moti >= 34001)&&(moti <= 37027)){//wait 3000
+n_loss2();
+}
+ else if((moti >= 37028)&&(moti <= 37098)){//gaseチェリー 70 4
+e_cherry1();
+
+vmode = 1;
+}
+ else if((moti >= 37099)&&(moti <= 40000)){//loss
+n_loss();
+}
+ else if((moti >= 40001)&&(moti <= 40051)){//gaseチェリー50 5
+e_cherry1();
+vmode = 1;
+}
+ else if((moti >= 40052)&&(moti <= 41052)){//loss hi 1000
+n_loss();
+i=1;
+}
+ else if((moti >= 41053)&&(moti <= 60700)){//loss
+n_loss();
+}
+ else if((moti >= 60701)&&(moti <= 61001)){//チェリー 300
+e_cherry1();
+}
+ else if((moti >= 61002)&&(moti <= 61201)){//チェリー強 200
+esp_cherry();
+vmode = 2;
+}
+ else if((moti >= 61202)&&(moti <= 63202)){//gaseチェリー2000 ex
+e_cherry1();
+vmode = 1;
+}
+ else if((moti >= 63203)&&(moti <= 65537)){//loss
+n_loss();
+}
+}
+}
+
+
+
+
+
+else if((s_set >= 801)&&(s_set <= 1100)){
+// yellow  ST準備 mode●
+digitalWrite(15,HIGH); 
+digitalWrite(16,HIGH); 
+
+if(vmode == 10){
+if(moti ==0){//5or10fz 1:1   32768
+// reset
+s_reset();
+} 
+ else if((moti >= 1)&&(moti <= 65537)){  
+// 5連
+s_big();
+st_point++;
+st_point++;
+st_point++;
+st_point++;
+st_point++;
+vmode = 7;
+ }
+}
+
+if(vmode == 9){
+if(moti ==0){//5or10fz 1:1   32768
+// reset
+s_reset();
+} 
+ else if((moti >= 1)&&(moti <= 65537)){  
+// 5連
+s_big();
+st_point++;
+st_point++;
+st_point++;
+st_point++;
+st_point++;
+vmode = 7;
+ }
+}
+
+if(vmode == 8){
+if(moti ==0){//5or10fz 1:1   32768
+// reset
+s_reset();
+} 
+ else if((moti >= 1)&&(moti <= 65537)){  
+// 5連
+s_big();
+st_point++;
+st_point++;
+st_point++;
+st_point++;
+st_point++;
+vmode = 7;
+ }
+}
+
+if(vmode == 6){
+if(moti ==0){//5or10fz 1:1   32768
+// reset
+s_reset();
+} 
+ else if((moti >= 1)&&(moti <= 65537)){  
+// 5連
+s_big();
+st_point++;
+st_point++;
+st_point++;
+st_point++;
+st_point++;
+vmode = 7;
+ }
+}
+
+
+
+if(vmode == 5){
+if(moti ==0){//5or10fz 1:1   32768
+// reset
+s_reset();
+} 
+ else if((moti >= 1)&&(moti <= 65537)){  
+// 5連
+s_big();
+st_point++;
+st_point++;
+st_point++;
+st_point++;
+st_point++;
+vmode = 7;
+ }
+}
+
+if(vmode == 4){
+if(moti ==0){//5or10fz 1:1   32768
+// reset
+s_reset();
+} 
+ else if((moti >= 1)&&(moti <= 65537)){  
+// 5連
+s_big();
+st_point++;
+st_point++;
+st_point++;
+st_point++;
+st_point++;
+vmode = 7;
+ }
+}
+
+if(vmode == 3){
+if(moti ==0){//5or10fz 1:1   32768
+// reset
+s_reset();
+} 
+ else if((moti >= 1)&&(moti <= 65537)){  
+// 5連
+s_big();
+st_point++;
+st_point++;
+st_point++;
+st_point++;
+st_point++;
+vmode = 7;
+ }
+}
+
+if(vmode == 2){
+
+if(moti ==0){//5or10fz 1:1   32768
+// reset
+s_reset();
+} 
+ else if((moti >= 1)&&(moti <= 65537)){  
+// 5連
+s_big();
+st_point++;
+st_point++;
+st_point++;
+st_point++;
+st_point++;
+vmode = 7;
+ }
+}
+
+if(vmode == 1){
+if(moti ==0){//5or10fz 1:1   32768
+// reset
+s_reset();
+} 
+ else if((moti >= 1)&&(moti <= 65537)){  
+// 5連
+s_big();
+st_point++;
+st_point++;
+st_point++;
+st_point++;
+st_point++;
+vmode = 7;
+ }
+}
+if(vmode == 0){//ボーナス 1.7% 1321  vmode10  B_point 4071 8%  reg_point 26390 vmode10  48.3%    5392  
+
+if(moti ==0){
+// reset
+s_reset();
+}
+ else if((moti >= 1)&&(moti <= 9898)){//9897 reg1
+ // 1GB
+if (reg_point >= 2){
+digitalWrite(11,LOW); 
+delay(600); 
+e_lgogo();
+vmode = 10;
+}
+else if(reg_point <= 1){
+n_loss();
+}
+--b_point;
+--reg_point;
+ }
+
+
+else if((moti >= 9899)&&(moti <= 9999)){//ziriki1 100
+//自力BIG
+delay(600); 
+e_gogo();
+--b_point;
+--reg_point;
+vmode = 10;
+ }
+ else if((moti >= 10000)&&(moti <= 10538)){//乱数リセット 538
+--b_point;
+--reg_point;
+n_loss1();
+ }
+ else if((moti >= 10539)&&(moti <= 11539)){//b1000 1 fz
+ // 1GB
+if (b_point >= 2){
+digitalWrite(11,LOW); 
+delay(600); 
+e_gogo();
+vmode = 10;
+}
+
+else if(b_point <= 1){
+//loss
+n_loss();
+}
+--b_point;
+--reg_point;
+ }
+ else if((moti >= 11540)&&(moti <= 13670)){//loss
+--b_point;
+--reg_point;
+n_loss();
+ }
+
+else if((moti >= 13671)&&(moti <= 13771)){//ziriki2 100
+//自力BIG
+delay(600); 
+e_lgogo();
+--b_point;
+--reg_point;
+vmode = 10;
+ }
+
+ else if((moti >= 13772)&&(moti <= 23440)){
+ 
+--b_point;
+--reg_point;
+n_loss();
+ }
+
+ else if((moti >= 23441)&&(moti <= 25070)){//b1629 2
+ // 1GB
+if (b_point >= 2){
+digitalWrite(11,LOW); 
+delay(600); 
+e_gogo();
+vmode = 10;
+}
+else if(b_point <= 1){
+//loss
+n_loss();
+}
+--b_point;
+--reg_point;
+ }
+
+
+
+ else if((moti >= 25071)&&(moti <= 27564)){//loss
+--b_point;
+--reg_point;
+n_loss();
+ }
+
+
+ else if((moti >= 27565)&&(moti <= 30000)){//reg 2 2288
+ // 1GB
+if (reg_point >= 2){
+digitalWrite(11,LOW); 
+delay(600); 
+e_pgogo();
+vmode = 10;
+}
+else if(reg_point <= 1){
+n_loss();
+}
+--b_point;
+--reg_point;
+ }
+
+
+ else if((moti >= 30001)&&(moti <= 31000)){//loss
+--b_point;
+--reg_point;
+n_loss();
+ }
+
+ else if((moti >= 31001)&&(moti <= 31245)){//ziri6 244
+//自力BIG
+delay(600); 
+e_lgogo();
+--b_point;
+--reg_point;
+vmode = 10;
+
+ }
+ else if((moti >= 31246)&&(moti <= 38000)){//loss
+--b_point;
+--reg_point;
+n_loss();
+ }
+ else if((moti >= 38001)&&(moti <= 38245)){//ziri7 244
+//自力BIG
+delay(600); 
+e_lgogo();
+--b_point;
+--reg_point;
+vmode = 10;
+
+ }
+ else if((moti >= 38246)&&(moti <= 47682)){//reg3  9436
+ // 1GB
+if (reg_point >= 2){
+digitalWrite(11,LOW); 
+delay(600); 
+e_gogo();
+vmode = 10;
+}
+else if(reg_point <= 1){
+
+n_loss();
+}
+--b_point;
+--reg_point;
+ }
+
+ else if((moti >= 47683)&&(moti <= 48000)){//ziri8 317
+//自力BIG
+delay(600); 
+e_pgogo();
+--b_point;
+--reg_point;
+vmode = 10;
+
+ }
+ else if((moti >= 48001)&&(moti <= 48751)){//b750 3
+// 1GB
+if (b_point >= 2){
+digitalWrite(11,LOW); 
+delay(600); 
+e_pgogo();
+vmode = 10;
+}
+else if(b_point <= 1){
+//loss
+n_loss();
+}
+--b_point;
+--reg_point;
+ }
+
+ else if((moti >= 48752)&&(moti <= 49501)){
+ 
+--b_point;
+--reg_point;
+n_loss();
+ }
+
+ else if((moti >= 49502)&&(moti <= 49818)){//ziriki9 316
+//自力BIG
+delay(600); 
+e_pgogo();
+--b_point;
+--reg_point;
+vmode = 10;
+
+ }
+
+ else if((moti >= 49819)&&(moti <= 60074)){//loss
+--b_point;
+--reg_point;
+n_loss();
+ }
+
+
+
+ else if((moti >= 60075)&&(moti <= 64844)){//reg4 4769
+
+// 1GB
+if (reg_point >= 2){
+digitalWrite(11,LOW); 
+delay(600); 
+e_lgogo();
+vmode = 10;
+}
+else if(reg_point <= 1){
+
+n_loss();
+}
+--b_point;
+--reg_point;
+ }
+ else if((moti >= 64845)&&(moti <= 65537)){//r4769 4 b692
+// 1GB
+if (b_point >= 2){
+digitalWrite(11,LOW); 
+delay(600); 
+e_lgogo();
+vmode = 10;
+}
+else if(b_point <= 1){
+//loss
+n_loss();
+}
+--b_point;
+--reg_point;
+ }
+}
+}
+
+if(vmode == 7){
+vmode = 0;
+}
+if( moti >= 1){
+number=0;
+}
+if(b_point<=0){  
+b_point=1;
+}
+if(reg_point<=0){  
+reg_point=1;
+}
+
+
+
+
+
+}
+
+
+
+byte loop_big_s(byte sound){
+
+switch(sound){  
+case 1:
+play(0x01);
+delay(39500);
+break;
+case 2:
+play(0x02);
+delay(41500);
+break;
+case 3:
+play(0x03);
+delay(44500);
+break;
+}
+}
+
+
+
+
+void n_spv(){
+v_blank();
+delay(200);
+u8g.firstPage();  
+  do {
+u8g.setColorIndex(1);
+u8g.drawStr( 10, 22, "BPT STC");
+u8g.setPrintPos(30,50);
+u8g.print(b_point - 1);  
+u8g.setPrintPos(80,50);
+u8g.print(st_point); 
+  } while( u8g.nextPage() );
+
+if(vmode == 4){
+digitalWrite(11,HIGH);
+}
+}
+
+
+void e_lgogo(){  //バイブ後無音ピカ 1/4
+digitalWrite(3,LOW);
+digitalWrite(4,LOW); 
+digitalWrite(5,LOW); 
+digitalWrite(6,HIGH); 
+digitalWrite(7,LOW);  
+digitalWrite(8,LOW); 
+digitalWrite(9,LOW); 
+
+digitalWrite(7,HIGH); 
+delay(1000);
+digitalWrite(7,LOW); 
+delay(600);
+v_gogo();
+delay(200);
+play(0x05);
+delay(900);
+}
+
+void e_pgogo(){  //先ピカ 1/4
+digitalWrite(3,LOW);
+digitalWrite(4,LOW); 
+digitalWrite(5,LOW); 
+digitalWrite(6,HIGH); 
+digitalWrite(7,LOW);  
+digitalWrite(8,LOW); 
+digitalWrite(9,LOW); 
+ 
+v_gogo();
+delay(300);
+play(0x04);
+delay(1400);
+play(0x05);
+delay(900);
+}
+
+
+void e_gogo(){  //がこ後ピカ 2/4
+digitalWrite(3,LOW);
+digitalWrite(4,LOW); 
+digitalWrite(5,LOW); 
+digitalWrite(6,HIGH); 
+digitalWrite(7,LOW);  
+digitalWrite(8,LOW); 
+digitalWrite(9,LOW); 
+
+play(0x04);
+delay(1400);
+v_gogo();
+delay(200);
+play(0x0e);
+delay(1400);
+play(0x05);
+delay(900);
+}
+
+void v_gogo(){
+     u8g.firstPage();  
+  do {
+ u8g.setColorIndex(1);
+u8g.drawStr( 30, 39, "GOGO!");
+ 
+u8g.drawLine(10, 31, 30, 20);//開始横x、開始縦y、終横x、終縦y
+u8g.drawLine(30, 20,25,0);
+u8g.drawLine(25,0,47,15);
+u8g.drawLine(47,15,54,0);
+u8g.drawLine(54,0,63,13);
+u8g.drawLine(63,13,70,1);
+u8g.drawLine(72,1,83,13);
+u8g.drawLine(83,13,95,0);
+u8g.drawLine(95,0,100,12);
+u8g.drawLine(100,12,125,0);
+u8g.drawLine(125,0,106,25);
+
+
+u8g.drawLine(10, 31, 30, 40);
+u8g.drawLine(30, 40,26,57);
+u8g.drawLine(26,57,40,45);
+u8g.drawLine(40,45,47,59);
+u8g.drawLine(47,59,56,47);
+u8g.drawLine(56,47,65,64);
+u8g.drawLine(65,64,75,47);
+u8g.drawLine(75,47,84,60);
+u8g.drawLine(84,60,90,49);
+u8g.drawLine(90,49,105,61);
+u8g.drawLine(105,61,102,44);
+u8g.drawLine(102,44,128,36);
+u8g.drawLine(128,36,106,25);
+  } while( u8g.nextPage() );
+}
+
+void s_reset(){
+digitalWrite(3,LOW);
+digitalWrite(4,LOW);
+digitalWrite(5,HIGH); 
+digitalWrite(6,LOW); 
+digitalWrite(7,LOW);  
+digitalWrite(8,LOW); 
+digitalWrite(9,LOW); 
+play(0x00);
+delay(30);
+}
+
+
+void n_loss(){
+digitalWrite(11,LOW); 
+digitalWrite(3,LOW);
+digitalWrite(4,LOW); 
+digitalWrite(5,LOW); 
+digitalWrite(6,HIGH); 
+digitalWrite(7,LOW);  
+digitalWrite(8,LOW); 
+digitalWrite(9,LOW); 
+play(0x04);
+delay(1400);
+v_blank();
+delay(200);
+
+play(0x05);
+delay(900);
+digitalWrite(11,LOW); 
+}
+
+void n_loss1(){//シード初期化
+digitalWrite(11,LOW); 
+digitalWrite(3,LOW);
+digitalWrite(4,LOW); 
+digitalWrite(5,LOW); 
+digitalWrite(6,HIGH); 
+digitalWrite(7,LOW);  
+digitalWrite(8,LOW); 
+digitalWrite(9,LOW); 
+
+play(0x04);
+delay(1400);
+
+randomSeed(analogRead(3));
+v_blank();
+delay(200);
+play(0x05);
+delay(900);
+digitalWrite(11,LOW); 
+}
+
+void n_loss2(){ //wait
+digitalWrite(11,LOW); 
+digitalWrite(3,LOW);
+digitalWrite(4,LOW); 
+digitalWrite(5,LOW); 
+digitalWrite(6,HIGH); 
+digitalWrite(7,LOW);  
+digitalWrite(8,LOW); 
+digitalWrite(9,LOW); 
+play(0x06);
+delay(1300);
+play(0x04);
+delay(1400);
+v_blank();
+delay(200);
+
+play(0x05);
+delay(900);
+digitalWrite(11,LOW); 
+}
+
+void n_loss3(){//okure●
+delay(600);
+digitalWrite(11,LOW); 
+digitalWrite(3,LOW);
+digitalWrite(4,LOW); 
+digitalWrite(5,LOW); 
+digitalWrite(6,HIGH); 
+digitalWrite(7,LOW);  
+digitalWrite(8,LOW); 
+digitalWrite(9,LOW); 
+
+play(0x04);
+delay(1400);
+v_blank();
+delay(200);
+
+play(0x05);
+delay(900);
+digitalWrite(11,LOW); 
+}
+
+void n_loss4(){//long_okure●
+delay(1200);
+digitalWrite(11,LOW); 
+digitalWrite(3,LOW);
+digitalWrite(4,LOW); 
+digitalWrite(5,LOW); 
+digitalWrite(6,HIGH); 
+digitalWrite(7,LOW);  
+digitalWrite(8,LOW); 
+digitalWrite(9,LOW); 
+play(0x04);
+delay(1400);
+v_blank();
+delay(200);
+
+play(0x05);
+delay(900);
+digitalWrite(11,LOW); 
+}
+
+void n_loss5(){//muon●
+digitalWrite(11,LOW); 
+digitalWrite(3,LOW);
+digitalWrite(4,LOW); 
+digitalWrite(5,LOW); 
+digitalWrite(6,HIGH); 
+digitalWrite(7,LOW);  
+digitalWrite(8,LOW); 
+digitalWrite(9,LOW); 
+
+
+delay(1300);
+v_blank();
+delay(200);
+
+play(0x05);
+delay(900);
+digitalWrite(11,LOW); 
+}
+
+
+void v_blank(){
+    u8g.firstPage();  
+  do {
+ u8g.setColorIndex(0);
+u8g.drawBox(0, 0, 128, 64);
+  } while( u8g.nextPage() );
+}
+
+void n_REG1(){
+digitalWrite(6,HIGH); 
+digitalWrite(11,LOW); 
+digitalWrite(4,HIGH);  
+digitalWrite(5,LOW);  
+play(0x04);
+delay(1400); 
+v_blank();
+delay(200);
+v_reg();
+delay(500);
+play(0x08);
+delay(16500);
+digitalWrite(4,LOW); 
+digitalWrite(9,HIGH);
+v_blank();
+delay(500);
+delay(1500);
+}
+void s_REG1(){
+digitalWrite(6,HIGH); 
+digitalWrite(11,HIGH); 
+digitalWrite(4,HIGH);  
+digitalWrite(5,LOW);  
+play(0x09);
+delay(11500); 
+v_blank();
+delay(200);
+v_reg_s();
+delay(500);
+play(0x0a);
+delay(5500);
+play(0x08);
+delay(16500);
+digitalWrite(4,LOW); 
+digitalWrite(9,HIGH);
+v_blank();
+delay(500);
+delay(1500);
+}
+
+
+
+
+
+
+void n_big1(){ //1-2
+digitalWrite(6,HIGH); 
+digitalWrite(11,LOW); 
+digitalWrite(3,HIGH);  
+digitalWrite(5,LOW);  
+play(0x04);
+delay(1400); 
+v_blank();
+delay(200);
+v_BIG();
+delay(400);
+play(0x07);
+delay(31500);
+digitalWrite(3,LOW); 
+digitalWrite(9,HIGH);
+v_blank();
+delay(500);
+delay(1500);
+}
+
+
+
+void s_big(){ // zyanbari
+digitalWrite(6,HIGH); 
+digitalWrite(11,LOW); 
+digitalWrite(3,HIGH);  
+digitalWrite(5,LOW);  
+play(0x04);
+delay(1400); 
+v_blank();
+delay(200); 
+v_BIG();
+delay(400);
+play(0x0f);
+delay(40500);
+digitalWrite(3,LOW); 
+digitalWrite(9,HIGH);
+v_blank();
+delay(500);
+delay(1500);
+}
+
+
+void v_BIG(){
+  u8g.firstPage();  
+  do {
+     u8g.setColorIndex(1);
+u8g.drawStr( 21, 27, "BIG");
+u8g.drawStr( 21, 55, "BONUS");
+} while ( u8g.nextPage() );
+}
+void v_FFF(){
+  u8g.firstPage();  
+  do {
+     u8g.setColorIndex(1);
+u8g.drawStr( 21, 27, "FFFF");
+u8g.drawStr( 21, 55, "000");
+} while ( u8g.nextPage() );
+delay(100);
+}
+
+
+
+void v_cherry(){
+  u8g.firstPage();  
+  do {
+     u8g.setColorIndex(1);
+u8g.drawStr( 21, 60, "cherry");
+u8g.drawEllipse(93, 22, 14, 6);
+u8g.drawEllipse(98, 34, 15, 6);
+u8g.drawLine(80, 24, 97, 22);
+u8g.drawLine(80, 35, 105, 34);
+u8g.drawFilledEllipse(67, 14, 11, 11);
+u8g.drawFilledEllipse(78, 34, 13, 13);
+u8g.drawFilledEllipse(53, 34, 12, 12);
+  } while( u8g.nextPage() );  
+}
+void v_reg(){
+    u8g.firstPage();  
+  do {
+     u8g.setColorIndex(1);
+u8g.drawStr( 21, 27, "REG");
+u8g.drawStr( 21, 55, "BONUS");
+} while ( u8g.nextPage() );
+}
+
+void v_reg_s(){ //BOSS REG
+    u8g.firstPage();  
+  do {
+     u8g.setColorIndex(1);
+u8g.drawStr( 21, 27, "BOSS");
+u8g.drawStr( 21, 55, "BONUS");
+} while ( u8g.nextPage() );
+}
+
+
+void e_vibe(){  //２％　　
+digitalWrite(3,LOW);
+digitalWrite(4,LOW); 
+digitalWrite(5,LOW); 
+digitalWrite(6,HIGH); 
+digitalWrite(8,LOW); 
+digitalWrite(9,LOW); 
+digitalWrite(11,LOW); 
+digitalWrite(7,HIGH); 
+delay(1000);
+digitalWrite(7,LOW); 
+play(0x04);
+delay(1400);
+v_blank(); 
+delay(200);
+play(0x05);
+delay(900);
+}
+void e_cherry1(){ 
+digitalWrite(3,LOW);
+digitalWrite(4,LOW); 
+digitalWrite(5,LOW); 
+digitalWrite(6,HIGH); 
+digitalWrite(7,LOW);  
+digitalWrite(8,LOW); 
+digitalWrite(9,LOW); 
+//digitalWrite(11,LOW); 
+play(0x04);
+delay(1400);
+v_blank(); 
+delay(200);
+v_cherry();
+delay(200);
+play(0x0c);//n_cherry
+delay(1400);
+play(0x05);
+delay(900);
+}
+
+void esp_cherry(){  
+digitalWrite(3,LOW);
+digitalWrite(4,LOW); 
+digitalWrite(5,LOW); 
+digitalWrite(6,HIGH); 
+digitalWrite(7,LOW);  
+digitalWrite(8,LOW); 
+digitalWrite(9,LOW); 
+digitalWrite(11,LOW); 
+play(0x04);
+delay(1400);
+v_blank(); 
+delay(200);
+v_cherry();
+delay(200);
+play(0x0d);//sp_cherry
+delay(1700);
+play(0x05);
+delay(900);
+}
+
+void v_freeze(){
+  u8g.firstPage();  
+  do {
+        u8g.setColorIndex(1);         // pixel on
+        u8g.drawBox(0,0, 128, 64);   // 四角
+        u8g.setColorIndex(0);         // pixel off
+        u8g.drawFilledEllipse(63, 30, 5, 5);  // 丸
+        
+        u8g.drawBox(25, 28, 80, 4);//15 90
+           u8g.drawBox(0, 29, 128, 2);
+        u8g.drawBox(62, 20, 4, 25);
+         u8g.drawBox(63, 10, 2, 45);
+        u8g.setColorIndex(1);         // pixel on
+  } while( u8g.nextPage() );
+}
+
+void crash(){
+v_blank();
+delay(50);
+digitalWrite(11,HIGH);
+v_freeze();
+play(0x0b);//ぷちゅん
+delay(2400);
+delay(1000);
+digitalWrite(7,HIGH);
+delay(1000);
+digitalWrite(7,LOW);
+delay(400);
+digitalWrite(7,HIGH);
+delay(2000);
+digitalWrite(7,LOW);
+play(0x0a);//fan
+delay(5500);
+v_blank();
+delay(100);
+v_gogo();
+delay(200);
+play(0x0e);
+delay(1400);
+
+}
+
+
+void play(unsigned char Track)
+{
+ unsigned char play[6] = {0xAA,0x07,0x02,0x00,Track,Track+0xB3};
+   Serial1.write(play,6);
+}
+void volume( unsigned char vol)
+{
+  unsigned char volume[5] = {0xAA,0x13,0x01,vol,vol+0xBE};
+     Serial1.write(volume,5);
+ }
+void statu( unsigned char sta)
+{
+  unsigned char statu[5] = {0xAA,0x01,0x00,sta,sta+0xAB};
+     Serial1.write(statu,5);
+ }
+
+
+
