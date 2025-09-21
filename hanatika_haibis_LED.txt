@@ -1,0 +1,1693 @@
+//キングハナハナ-30 プレミアム点滅図鑑！ 41種類を一挙紹介！ │ 【ハナハナ】【パチスロ】
+//ttps://www.youtube.com/watch?v=1CG9woxbePA パイオニアちゃんねる公式
+
+//1左から点滅　９０ミリセカンド
+//2ボワァ～点滅
+//3高速点滅　　通常の１．７５倍
+//4右から点滅
+//三三七拍子
+//6点灯
+//7花びらのみ点滅
+//8葉っぱだけ点滅
+//9花びら点滅葉っぱ点灯
+//10花びら点灯葉っぱ点滅
+//11フワフワ点滅
+//12カラフル点滅１
+//13カラフル点滅２
+//14三三四拍子
+//15赤メラメラ点滅
+//16ゆっくり点滅
+//17カラフル点滅７
+//18緩急点滅
+//19kしびれ点滅
+//20スピードアップ＆ダウン
+//21チバリヨ風点滅
+//22おもてなし点滅
+//23ゆっくりモーフィン点滅
+//24白移動葉っぱ点灯
+//25黒移動葉っぱ点灯
+//26ｋカラフル点滅１
+//27ｋカラフル点滅１スロー
+//28チカチカ移動
+
+
+
+
+
+
+#include <EEPROM.h>
+int stateD;            
+int stateF;            
+int adata = 0;  
+int stateG;            
+int stateH;            
+int bdata = 0;    
+long number;
+long namber;
+void setup(){
+  Serial.begin(9600);
+pinMode(4,INPUT_PULLUP);//シグナルＢＩＧ　ｉｎ
+//pinMode(2,INPUT_PULLUP);//flash
+pinMode(8,OUTPUT);//バックライト
+pinMode(3,OUTPUT);//L1
+pinMode(5,OUTPUT);//L2
+pinMode(6,OUTPUT);//LH
+pinMode(9,OUTPUT);//R1
+pinMode(10,OUTPUT);//R2
+pinMode(11,OUTPUT);//RH
+randomSeed(analogRead(3));
+//attachInterrupt(0,software_reset,RISING);
+pinMode(13,INPUT_PULLUP);//シグナルＲＥＧ　ｉｎ
+}
+void software_reset() {
+analogWrite(3,230); //通常点滅
+analogWrite(5,230);
+analogWrite(6,230);
+analogWrite(9,230);
+analogWrite(10,230);
+analogWrite(11,230);
+}
+byte val0 = EEPROM.read(0);
+byte data = val0;           // rotate data
+
+void loop(){//ハナ０－２３
+blank();
+if(data >= 29){
+val0 = 1;
+}
+EEPROM.write(0, val0 + 1);
+//EEPROM.update(0, data);
+Serial.println(data);
+stateD = digitalRead(4);                // BIG
+   if ( stateD == 1 && stateF == 0 ) // plus count
+     adata++;
+     stateF = stateD;
+delay(10);
+if(adata>=1){  
+number = random(1,216);
+}
+if( adata >= 1){
+adata -= 1;
+}
+long moti =number;
+
+if(moti ==0){
+blank();
+}
+else if((moti >= 1)&&(moti <= 216)){
+switch (data) {
+case 1:
+    LED_1();               
+    digitalWrite(8,HIGH); 
+    break; 
+case 2:
+    LED_2();               
+    digitalWrite(8,HIGH); 
+    break;
+case 3:
+    LED_3();               
+    digitalWrite(8,HIGH); 
+    break; 
+case 4:
+    LED_4();               
+    digitalWrite(8,HIGH); 
+    break;
+case 5:
+    LED_5();               
+    digitalWrite(8,HIGH); 
+    break;
+case 6:
+    LED_6();               
+    digitalWrite(8,HIGH); 
+    break;
+case 7:
+    LED_7();               
+    digitalWrite(8,HIGH); 
+    break;
+case 8:
+    LED_8();               
+    digitalWrite(8,HIGH); 
+    break;
+case 9:
+    LED_9();               
+    digitalWrite(8,HIGH); 
+    break;
+case 10:
+    LED_10();               
+    digitalWrite(8,HIGH); 
+    break;
+case 11:
+    LED_11();               
+    digitalWrite(8,HIGH); 
+    break;
+case 12:
+    LED_12();               
+    digitalWrite(8,HIGH); 
+    break;
+case 13:
+    LED_13();               
+    digitalWrite(8,HIGH); 
+    break;
+case 14:
+    LED_14();               
+    digitalWrite(8,HIGH); 
+    break;
+case 15:
+    LED_15();               
+    digitalWrite(8,HIGH); 
+    break;
+case 16:
+    LED_16();               
+    digitalWrite(8,HIGH); 
+    break;
+case 17:
+    LED_17();               
+    digitalWrite(8,HIGH); 
+    break;
+case 18:
+    LED_18();               
+    digitalWrite(8,HIGH); 
+    break;
+case 19:
+    LED_19();               
+    digitalWrite(8,HIGH); 
+    break; 
+case 20:
+    LED_20();               
+    digitalWrite(8,HIGH); 
+    break;
+case 21:
+    LED_21();               
+    digitalWrite(8,HIGH); 
+    break; 
+case 22:
+    LED_22();               
+    digitalWrite(8,HIGH); 
+    break;
+case 23:
+    LED_23();               
+    digitalWrite(8,HIGH); 
+    break;
+case 24:
+    LED_24();               
+    digitalWrite(8,HIGH); 
+    break;
+case 25:
+    LED_25();               
+    digitalWrite(8,HIGH); 
+    break;
+case 26:
+    LED_26();               
+    digitalWrite(8,HIGH); 
+    break;
+case 27:
+    LED_27();               
+    digitalWrite(8,HIGH); 
+    break;
+case 28:
+    LED_28();               
+    digitalWrite(8,HIGH); 
+    break;
+}
+}
+}
+//LED_0();0-23＿
+void blank(){
+analogWrite(3,0); 
+analogWrite(5,0);
+analogWrite(6,0);
+analogWrite(9,0);
+analogWrite(10,0);
+analogWrite(11,0);
+delay(3);
+}
+void LED_1() {
+analogWrite(3,200); //通常点滅 ９０ミリ秒
+analogWrite(5,200);
+analogWrite(6,200);
+analogWrite(9,0);
+analogWrite(10,0);
+analogWrite(11,0);
+delay(90);
+analogWrite(3,0);
+analogWrite(5,0);
+analogWrite(6,0);
+analogWrite(9,200);
+analogWrite(10,200);
+analogWrite(11,200);
+delay(90);
+}
+
+
+
+void LED_2() {
+//ボワァー点滅
+for(int x=0; x<240; x++){ //suro tenmetu
+analogWrite(3,x);
+delay(1);
+analogWrite(5,x);
+delay(1);
+analogWrite(6,x);
+delay(1);
+analogWrite(9,x);
+delay(1);
+analogWrite(10,x);
+delay(1);
+analogWrite(11,x);
+delay(1);
+x++;
+x++;
+x++;
+x++;
+}
+for(int x=240; x>=0; x--){
+analogWrite(3,x);
+delay(1);
+analogWrite(5,x);
+delay(1);
+analogWrite(6,x);
+delay(1);
+analogWrite(9,x);
+delay(1);
+analogWrite(10,x);
+delay(1);
+analogWrite(11,x);
+delay(1);
+x--;
+x--;
+x--;
+x--;
+}
+delay(200);
+}
+void LED_3() {
+analogWrite(3,200); //高速点滅1,75倍 50ミリ秒
+analogWrite(5,200);
+analogWrite(6,200);
+analogWrite(9,0);
+analogWrite(10,0);
+analogWrite(11,0);
+delay(50);
+analogWrite(3,0);
+analogWrite(5,0);
+analogWrite(6,0);
+analogWrite(9,200);
+analogWrite(10,200);
+analogWrite(11,200);
+delay(50);
+}
+void LED_4() {
+analogWrite(3,0); //右から点滅 ９０ミリ秒
+analogWrite(5,0);
+analogWrite(6,0);
+analogWrite(9,200);
+analogWrite(10,200);
+analogWrite(11,200);
+delay(90);
+analogWrite(3,200);
+analogWrite(5,200);
+analogWrite(6,200);
+analogWrite(9,0);
+analogWrite(10,0);
+analogWrite(11,0);
+delay(90);
+}
+void LED_5() {
+//337　高速Ver
+int ntime;
+int ttime;
+analogWrite(3,200); //tuuzyou tenmetu
+analogWrite(5,200);
+analogWrite(6,200);
+analogWrite(9,0);
+analogWrite(10,0);
+analogWrite(11,0);
+delay(120);
+analogWrite(3,0);
+analogWrite(5,0);
+analogWrite(6,0);
+analogWrite(9,0);
+analogWrite(10,0);
+analogWrite(11,0);
+delay(120);
+analogWrite(3,200); //tuuzyou tenmetu
+analogWrite(5,200);
+analogWrite(6,200);
+analogWrite(9,0);
+analogWrite(10,0);
+analogWrite(11,0);
+delay(120);
+analogWrite(3,0);
+analogWrite(5,0);
+analogWrite(6,0);
+analogWrite(9,0);
+analogWrite(10,0);
+analogWrite(11,0);
+delay(120);
+analogWrite(3,200); //tuuzyou tenmetu
+analogWrite(5,200);
+analogWrite(6,200);
+analogWrite(9,0);
+analogWrite(10,0);
+analogWrite(11,0);
+delay(120);
+for(int ntime=200; ntime>0; ntime--){ //suro tenmetu
+analogWrite(3,ntime); //tuuzyou tenmetu
+analogWrite(5,ntime);
+analogWrite(6,ntime);
+delay(1);}
+delay(200);
+analogWrite(3,0); //tuuzyou tenmetu
+analogWrite(5,0);
+analogWrite(6,0);
+analogWrite(9,200);
+analogWrite(10,200);
+analogWrite(11,200);
+delay(120);
+analogWrite(3,0);
+analogWrite(5,0);
+analogWrite(6,0);
+analogWrite(9,0);
+analogWrite(10,0);
+analogWrite(11,0);
+delay(120);
+analogWrite(3,0); //tuuzyou tenmetu
+analogWrite(5,0);
+analogWrite(6,0);
+analogWrite(9,200);
+analogWrite(10,200);
+analogWrite(11,200);
+delay(120);
+analogWrite(3,0);
+analogWrite(5,0);
+analogWrite(6,0);
+analogWrite(9,0);
+analogWrite(10,0);
+analogWrite(11,0);
+delay(120);
+analogWrite(3,0); //tuuzyou tenmetu
+analogWrite(5,0);
+analogWrite(6,0);
+analogWrite(9,200);
+analogWrite(10,200);
+analogWrite(11,200);
+delay(120);
+for(int ntime=200; ntime>0; ntime--){ //suro tenmetu
+analogWrite(9,ntime); //tuuzyou tenmetu
+analogWrite(10,ntime);
+analogWrite(11,ntime);
+delay(1);}
+delay(200);
+analogWrite(3,200); //tuuzyou tenmetu
+analogWrite(5,200);
+analogWrite(6,200);
+analogWrite(9,200);
+analogWrite(10,200);
+analogWrite(11,200);
+delay(120);
+analogWrite(3,0);
+analogWrite(5,0);
+analogWrite(6,0);
+analogWrite(9,0);
+analogWrite(10,0);
+analogWrite(11,0);
+delay(120);
+analogWrite(3,200); //tuuzyou tenmetu
+analogWrite(5,200);
+analogWrite(6,200);
+analogWrite(9,200);
+analogWrite(10,200);
+analogWrite(11,200);
+delay(120);
+analogWrite(3,0);
+analogWrite(5,0);
+analogWrite(6,0);
+analogWrite(9,0);
+analogWrite(10,0);
+analogWrite(11,0);
+delay(120);
+analogWrite(3,200); //tuuzyou tenmetu
+analogWrite(5,200);
+analogWrite(6,200);
+analogWrite(9,200);
+analogWrite(10,200);
+analogWrite(11,200);
+delay(120);
+analogWrite(3,0);
+analogWrite(5,0);
+analogWrite(6,0);
+analogWrite(9,0);
+analogWrite(10,0);
+analogWrite(11,0);
+delay(120);
+analogWrite(3,200); //tuuzyou tenmetu
+analogWrite(5,200);
+analogWrite(6,200);
+analogWrite(9,200);
+analogWrite(10,200);
+analogWrite(11,200);
+delay(120);
+analogWrite(3,0);
+analogWrite(5,0);
+analogWrite(6,0);
+analogWrite(9,0);
+analogWrite(10,0);
+analogWrite(11,0);
+delay(120);
+analogWrite(3,200); //tuuzyou tenmetu
+analogWrite(5,200);
+analogWrite(6,200);
+analogWrite(9,200);
+analogWrite(10,200);
+analogWrite(11,200);
+delay(120);
+analogWrite(3,0);
+analogWrite(5,0);
+analogWrite(6,0);
+analogWrite(9,0);
+analogWrite(10,0);
+analogWrite(11,0);
+delay(120);
+analogWrite(3,200); //tuuzyou tenmetu
+analogWrite(5,200);
+analogWrite(6,200);
+analogWrite(9,200);
+analogWrite(10,200);
+analogWrite(11,200);
+delay(120);
+analogWrite(3,0);
+analogWrite(5,0);
+analogWrite(6,0);
+analogWrite(9,0);
+analogWrite(10,0);
+analogWrite(11,0);
+delay(120);
+analogWrite(3,200); //tuuzyou tenmetu
+analogWrite(5,200);
+analogWrite(6,200);
+analogWrite(9,200);
+analogWrite(10,200);
+analogWrite(11,200);
+delay(120);
+for(int ntime=200; ntime>0; ntime--){ //suro tenmetu
+analogWrite(3,ntime); //tuuzyou tenmetu
+analogWrite(5,ntime);
+analogWrite(6,ntime);
+analogWrite(9,ntime); //tuuzyou tenmetu
+analogWrite(10,ntime);
+analogWrite(11,ntime);
+delay(1);}
+delay(250);
+}
+void LED_6() {
+//点灯
+for(int x=0; x<240; x++){
+analogWrite(3,x);
+analogWrite(5,x);
+analogWrite(6,x);
+analogWrite(9,x);
+analogWrite(10,x);
+analogWrite(11,x);
+delay(1);
+}
+delay(200000);
+}
+void LED_7() {
+analogWrite(3,220); //花びらのみ ９０ミリ秒
+analogWrite(5,220);
+analogWrite(6,0);
+analogWrite(9,0);
+analogWrite(10,0);
+analogWrite(11,0);
+delay(90);
+analogWrite(3,0);
+analogWrite(5,0);
+analogWrite(6,0);
+analogWrite(9,220);
+analogWrite(10,220);
+analogWrite(11,0);
+delay(90);
+}
+void LED_8() {
+analogWrite(3,0); //葉っぱのみ ９０ミリ秒
+analogWrite(5,0);
+analogWrite(6,240);
+analogWrite(9,0);
+analogWrite(10,0);
+analogWrite(11,0);
+delay(90);
+analogWrite(3,0);
+analogWrite(5,0);
+analogWrite(6,0);
+analogWrite(9,0);
+analogWrite(10,0);
+analogWrite(11,240);
+delay(90);
+}
+void LED_9() {
+analogWrite(3,200); //花びら点滅葉っぱ点灯 ９０ミリ秒
+analogWrite(5,200);
+analogWrite(6,230);
+analogWrite(11,230);
+analogWrite(9,0);
+analogWrite(10,0);
+delay(90);
+analogWrite(3,0);
+analogWrite(5,0);
+analogWrite(9,200);
+analogWrite(10,200);
+delay(90);
+}
+void LED_10() {
+analogWrite(3,200); //花びら点灯葉っぱ点滅 ９０ミリ秒
+analogWrite(5,200);
+analogWrite(6,200);
+analogWrite(9,200);
+analogWrite(10,200);
+analogWrite(11,0);
+delay(90);
+analogWrite(6,0);
+analogWrite(11,200);
+delay(90);
+}
+
+void LED_11() {
+//フワフワ点滅
+for(int x=30; x<190; x++){ //suro tenmetu
+analogWrite(3,x);
+delay(1);
+analogWrite(5,x);
+delay(1);
+analogWrite(6,x);
+delay(1);
+analogWrite(9,x);
+delay(1);
+analogWrite(10,x);
+delay(1);
+analogWrite(11,x);
+delay(1);
+x++;
+x++;
+x++;
+x++;
+}
+for(int x=190; x>=30; x--){
+analogWrite(3,x);
+delay(1);
+analogWrite(5,x);
+delay(1);
+analogWrite(6,x);
+delay(1);
+analogWrite(9,x);
+delay(1);
+analogWrite(10,x);
+delay(1);
+analogWrite(11,x);
+delay(1);
+x--;
+x--;
+x--;
+x--;
+}
+}
+
+
+void LED_12() {
+//カラフル点滅１
+analogWrite(3,0); //ゆっくり点滅1/5 600ミリ秒
+analogWrite(5,0);
+analogWrite(6,220);
+analogWrite(9,210);
+analogWrite(10,210);
+analogWrite(11,0);
+delay(90);
+analogWrite(3,210);
+analogWrite(5,210);
+analogWrite(6,0);
+analogWrite(9,0);
+analogWrite(10,0);
+analogWrite(11,220);
+delay(90);
+}
+void LED_13() {
+  //カラフル点滅２
+analogWrite(3,210); //ゆっくり点滅1/5 600ミリ秒
+analogWrite(5,210);
+analogWrite(6,210);
+analogWrite(9,210);
+analogWrite(10,210);
+analogWrite(11,210);
+delay(90);
+analogWrite(3,0);
+analogWrite(5,0);
+analogWrite(6,210);
+analogWrite(9,0);
+analogWrite(10,0);
+analogWrite(11,210);
+delay(90);
+analogWrite(3,210);
+analogWrite(5,210);
+analogWrite(6,210);
+analogWrite(9,210);
+analogWrite(10,210);
+analogWrite(11,210);
+delay(90);
+analogWrite(3,210);
+analogWrite(5,210);
+analogWrite(6,0);
+analogWrite(9,210);
+analogWrite(10,210);
+analogWrite(11,0);
+delay(90);
+}
+
+
+void LED_14() {
+//334　
+int ntime;
+int ttime;
+
+analogWrite(3,200); //tuuzyou tenmetu
+analogWrite(5,200);
+analogWrite(6,200);
+analogWrite(9,0);
+analogWrite(10,0);
+analogWrite(11,0);
+delay(120);
+analogWrite(3,0);
+analogWrite(5,0);
+analogWrite(6,0);
+analogWrite(9,0);
+analogWrite(10,0);
+analogWrite(11,0);
+delay(120);
+analogWrite(3,200); //tuuzyou tenmetu
+analogWrite(5,200);
+analogWrite(6,200);
+analogWrite(9,0);
+analogWrite(10,0);
+analogWrite(11,0);
+delay(120);
+analogWrite(3,0);
+analogWrite(5,0);
+analogWrite(6,0);
+analogWrite(9,0);
+analogWrite(10,0);
+analogWrite(11,0);
+delay(120);
+analogWrite(3,200); //tuuzyou tenmetu
+analogWrite(5,200);
+analogWrite(6,200);
+analogWrite(9,0);
+analogWrite(10,0);
+analogWrite(11,0);
+delay(120);
+for(int ntime=200; ntime>0; ntime--){ //suro tenmetu
+analogWrite(3,ntime); //tuuzyou tenmetu
+analogWrite(5,ntime);
+analogWrite(6,ntime);
+delay(1);}
+delay(200);
+analogWrite(3,0); //tuuzyou tenmetu
+analogWrite(5,0);
+analogWrite(6,0);
+analogWrite(9,200);
+analogWrite(10,200);
+analogWrite(11,200);
+delay(120);
+analogWrite(3,0);
+analogWrite(5,0);
+analogWrite(6,0);
+analogWrite(9,0);
+analogWrite(10,0);
+analogWrite(11,0);
+delay(120);
+analogWrite(3,0); //tuuzyou tenmetu
+analogWrite(5,0);
+analogWrite(6,0);
+analogWrite(9,200);
+analogWrite(10,200);
+analogWrite(11,200);
+delay(120);
+analogWrite(3,0);
+analogWrite(5,0);
+analogWrite(6,0);
+analogWrite(9,0);
+analogWrite(10,0);
+analogWrite(11,0);
+delay(120);
+analogWrite(3,0); //tuuzyou tenmetu
+analogWrite(5,0);
+analogWrite(6,0);
+analogWrite(9,200);
+analogWrite(10,200);
+analogWrite(11,200);
+delay(120);
+for(int ntime=200; ntime>0; ntime--){ //suro tenmetu
+analogWrite(9,ntime); //tuuzyou tenmetu
+analogWrite(10,ntime);
+analogWrite(11,ntime);
+delay(1);}
+delay(200);
+analogWrite(3,200); //tuuzyou tenmetu
+analogWrite(5,200);
+analogWrite(6,200);
+analogWrite(9,200);
+analogWrite(10,200);
+analogWrite(11,200);
+delay(120);
+analogWrite(3,0);
+analogWrite(5,0);
+analogWrite(6,0);
+analogWrite(9,0);
+analogWrite(10,0);
+analogWrite(11,0);
+delay(120);
+analogWrite(3,200); //tuuzyou tenmetu
+analogWrite(5,200);
+analogWrite(6,200);
+analogWrite(9,200);
+analogWrite(10,200);
+analogWrite(11,200);
+delay(120);
+analogWrite(3,0);
+analogWrite(5,0);
+analogWrite(6,0);
+analogWrite(9,0);
+analogWrite(10,0);
+analogWrite(11,0);
+delay(120);
+analogWrite(3,200); //tuuzyou tenmetu
+analogWrite(5,200);
+analogWrite(6,200);
+analogWrite(9,200);
+analogWrite(10,200);
+analogWrite(11,200);
+delay(120);
+analogWrite(3,0);
+analogWrite(5,0);
+analogWrite(6,0);
+analogWrite(9,0);
+analogWrite(10,0);
+analogWrite(11,0);
+delay(120);
+delay(240);
+analogWrite(3,240); //tuuzyou tenmetu
+analogWrite(5,240);
+analogWrite(6,240);
+analogWrite(9,240);
+analogWrite(10,240);
+analogWrite(11,240);
+delay(320);
+for(int ntime=240; ntime>0; ntime--){ //suro tenmetu
+analogWrite(3,ntime); //tuuzyou tenmetu
+analogWrite(5,ntime);
+analogWrite(6,ntime);
+analogWrite(9,ntime); //tuuzyou tenmetu
+analogWrite(10,ntime);
+analogWrite(11,ntime);
+delay(1);}
+delay(250);
+}
+
+void LED_15() {
+//赤メラメラ点滅
+analogWrite(3,150); //花びらのみ 1
+analogWrite(5,20);
+analogWrite(9,150);
+analogWrite(10,20);
+delay(90);
+analogWrite(3,10);
+analogWrite(5,100);
+analogWrite(9,10);
+analogWrite(10,100);
+delay(90);
+analogWrite(3,190); //花びらのみ 2
+analogWrite(5,10);
+analogWrite(9,190);
+analogWrite(10,10);
+delay(90);
+analogWrite(3,90);
+analogWrite(5,20);
+analogWrite(9,90);
+analogWrite(10,20);
+delay(90);
+analogWrite(3,20); //花びらのみ 3
+analogWrite(5,180);
+analogWrite(9,20);
+analogWrite(10,180);
+delay(90);
+analogWrite(3,140);
+analogWrite(5,10);
+analogWrite(9,140);
+analogWrite(10,10);
+delay(90);
+analogWrite(3,0); //花びらのみ 4
+analogWrite(5,90);
+analogWrite(9,0);
+analogWrite(10,90);
+delay(90);
+analogWrite(3,180);
+analogWrite(5,20);
+analogWrite(9,180);
+analogWrite(10,20);
+delay(90);
+analogWrite(3,10); //花びらのみ 5
+analogWrite(5,50);
+analogWrite(9,10);
+analogWrite(10,50);
+delay(90);
+analogWrite(3,90);
+analogWrite(5,0);
+analogWrite(9,90);
+analogWrite(10,0);
+delay(90);
+analogWrite(3,220); //花びらのみ 6
+analogWrite(5,20);
+analogWrite(9,220);
+analogWrite(10,20);
+delay(90);
+analogWrite(3,90);
+analogWrite(5,10);
+analogWrite(9,90);
+analogWrite(10,10);
+delay(90);
+}
+
+void LED_16() {
+analogWrite(3,200); //ゆっくり点滅1/5 600ミリ秒
+analogWrite(5,200);
+analogWrite(6,200);
+analogWrite(9,0);
+analogWrite(10,0);
+analogWrite(11,0);
+delay(600);
+analogWrite(3,0);
+analogWrite(5,0);
+analogWrite(6,0);
+analogWrite(9,200);
+analogWrite(10,200);
+analogWrite(11,200);
+delay(600);
+}
+
+
+
+void LED_17() {
+//カラフル点滅７
+int ntime;
+int ttime;
+for(int ntime=0; ntime<230; ntime++){ //suro tenmetu
+analogWrite(3,ntime); //tuuzyou tenmetu
+analogWrite(5,ntime);
+analogWrite(9,ntime); //tuuzyou tenmetu
+analogWrite(10,ntime);
+delay(2);}
+delay(100);
+for(int ntime=230; ntime>0; ntime--){ //suro tenmetu
+analogWrite(3,ntime); //tuuzyou tenmetu
+analogWrite(5,ntime);
+analogWrite(9,ntime); //tuuzyou tenmetu
+analogWrite(10,ntime);
+delay(2);}
+delay(100);
+analogWrite(3,0); //葉っぱのみ ９０ミリ秒
+analogWrite(5,0);
+analogWrite(6,240);
+analogWrite(9,0);
+analogWrite(10,0);
+analogWrite(11,240);
+delay(90);
+analogWrite(3,0);
+analogWrite(5,0);
+analogWrite(6,0);
+analogWrite(9,0);
+analogWrite(10,0);
+analogWrite(11,0);
+delay(90);
+analogWrite(3,0); //葉っぱのみ ９０ミリ秒
+analogWrite(5,0);
+analogWrite(6,240);
+analogWrite(9,0);
+analogWrite(10,0);
+analogWrite(11,240);
+delay(90);
+analogWrite(3,0);
+analogWrite(5,0);
+analogWrite(6,0);
+analogWrite(9,0);
+analogWrite(10,0);
+analogWrite(11,0);
+delay(90);
+analogWrite(3,0); //葉っぱのみ ９０ミリ秒
+analogWrite(5,0);
+analogWrite(6,240);
+analogWrite(9,0);
+analogWrite(10,0);
+analogWrite(11,240);
+delay(90);
+analogWrite(3,0);
+analogWrite(5,0);
+analogWrite(6,0);
+analogWrite(9,0);
+analogWrite(10,0);
+analogWrite(11,0);
+delay(400);
+for(int ntime=0; ntime<230; ntime++){ //suro tenmetu
+analogWrite(3,ntime); //tuuzyou tenmetu
+analogWrite(5,ntime);
+analogWrite(6,ntime);
+analogWrite(9,ntime); //tuuzyou tenmetu
+analogWrite(10,ntime);
+analogWrite(11,ntime);
+delay(2);
+}
+delay(100);
+for(int ntime=230; ntime>0; ntime--){ //suro tenmetu
+analogWrite(3,ntime); //tuuzyou tenmetu
+analogWrite(5,ntime);
+analogWrite(6,ntime);
+analogWrite(9,ntime); //tuuzyou tenmetu
+analogWrite(10,ntime);
+analogWrite(11,ntime);
+delay(2);}
+delay(150);
+for(int ntime=0; ntime<230; ntime++){ //suro tenmetu
+analogWrite(3,ntime); //tuuzyou tenmetu
+analogWrite(5,ntime);
+analogWrite(9,ntime); //tuuzyou tenmetu
+analogWrite(10,ntime);
+delay(2);}
+delay(100);
+for(int ntime=230; ntime>0; ntime--){ //suro tenmetu
+analogWrite(3,ntime); //tuuzyou tenmetu
+analogWrite(5,ntime);
+analogWrite(9,ntime); //tuuzyou tenmetu
+analogWrite(10,ntime);
+delay(2);}
+delay(100);
+}
+
+void LED_18() {
+//緩急点滅
+int ntime;
+int ttime;
+analogWrite(3,240); //葉っぱのみ ９０ミリ秒
+analogWrite(5,240);
+analogWrite(6,240);
+analogWrite(9,240);
+analogWrite(10,240);
+analogWrite(11,240);
+delay(80);
+analogWrite(3,0);
+analogWrite(5,0);
+analogWrite(6,0);
+analogWrite(9,0);
+analogWrite(10,0);
+analogWrite(11,0);
+delay(80);
+analogWrite(3,240); //葉っぱのみ ９０ミリ秒
+analogWrite(5,240);
+analogWrite(6,240);
+analogWrite(9,240);
+analogWrite(10,240);
+analogWrite(11,240);
+delay(80);
+analogWrite(3,0);
+analogWrite(5,0);
+analogWrite(6,0);
+analogWrite(9,0);
+analogWrite(10,0);
+analogWrite(11,0);
+delay(80);
+analogWrite(3,240); //葉っぱのみ ９０ミリ秒
+analogWrite(5,240);
+analogWrite(6,240);
+analogWrite(9,240);
+analogWrite(10,240);
+analogWrite(11,240);
+delay(400);
+for(int ntime=240; ntime>0; ntime--){ //suro tenmetu
+analogWrite(3,ntime); //tuuzyou tenmetu
+analogWrite(5,ntime);
+analogWrite(6,ntime);
+analogWrite(9,ntime); //tuuzyou tenmetu
+analogWrite(10,ntime);
+analogWrite(11,ntime);
+delay(2);}
+delay(400);
+}
+void LED_19() {
+//しびれ点滅
+analogWrite(3,250);
+analogWrite(5,250);
+analogWrite(6,250);
+analogWrite(9,250);
+analogWrite(10,250);
+analogWrite(11,250);
+delay(40);
+analogWrite(3,100); 
+analogWrite(5,100);
+analogWrite(6,100);
+analogWrite(9,100);
+analogWrite(10,100);
+analogWrite(11,100);
+delay(40);
+analogWrite(3,0);
+analogWrite(5,0);
+analogWrite(6,0);
+analogWrite(9,0);
+analogWrite(10,0);
+analogWrite(11,0);
+delay(12);
+}
+
+void LED_20() {
+//スピードアップ＆ダウン
+for(int x=0; x<20; x++){
+analogWrite(3,220);
+analogWrite(5,220);
+analogWrite(6,220);
+analogWrite(9,0);
+analogWrite(10,0);
+analogWrite(11,0);
+delay(8*x);
+analogWrite(3,0);
+analogWrite(5,0);
+analogWrite(6,0);
+analogWrite(9,220);
+analogWrite(10,220);
+analogWrite(11,220);
+delay(7*x);
+}
+}
+void LED_21() {
+//違和感交互点滅
+analogWrite(3,100); //tuuzyou tenmetu
+analogWrite(5,0);
+analogWrite(6,100);
+analogWrite(9,0);
+analogWrite(10,0);
+analogWrite(11,0);
+delay(50);
+analogWrite(3,20); //tuuzyou tenmetu
+analogWrite(5,0);
+analogWrite(6,20);
+analogWrite(9,0);
+analogWrite(10,0);
+analogWrite(11,0);
+delay(70);
+analogWrite(3,250); //tuuzyou tenmetu
+analogWrite(5,250);
+analogWrite(6,250);
+analogWrite(9,0);
+analogWrite(10,0);
+analogWrite(11,0);
+delay(50);
+analogWrite(3,0); //tuuzyou tenmetu
+analogWrite(5,0);
+analogWrite(6,0);
+analogWrite(9,100);
+analogWrite(10,0);
+analogWrite(11,100);
+delay(50);
+analogWrite(3,0); //tuuzyou tenmetu
+analogWrite(5,0);
+analogWrite(6,0);
+analogWrite(9,20);
+analogWrite(10,0);
+analogWrite(11,20);
+delay(70);
+analogWrite(3,0); //tuuzyou tenmetu
+analogWrite(5,0);
+analogWrite(6,0);
+analogWrite(9,250);
+analogWrite(10,250);
+analogWrite(11,250);
+delay(50);
+}
+void LED_22() {
+//ウインク
+
+int ntime;
+int ttime=0;
+  
+for(int ntime=0; ntime<180; ntime++){ //suro tenmetu 
+analogWrite(3,ntime); //tuuzyou tenmetu
+analogWrite(5,ntime);
+analogWrite(9,ntime);
+analogWrite(10,ntime);
+analogWrite(6,ntime);
+analogWrite(11,ntime);
+delay(10);
+}
+ while (true){
+analogWrite(3,150); //tuuzyou tenmetu
+analogWrite(5,150);
+analogWrite(6,150);
+analogWrite(9,150);
+analogWrite(10,150);
+analogWrite(11,150);
+delay(80);
+analogWrite(3,150); //tuuzyou tenmetu
+analogWrite(5,150);
+analogWrite(6,150);
+analogWrite(9,0);
+analogWrite(10,150);
+analogWrite(11,150);
+delay(80);
+analogWrite(3,150); //tuuzyou tenmetu
+analogWrite(5,150);
+analogWrite(6,150);
+analogWrite(9,0);
+analogWrite(10,0);
+analogWrite(11,150);
+delay(80);
+analogWrite(3,150); //tuuzyou tenmetu
+analogWrite(5,150);
+analogWrite(6,150);
+analogWrite(9,0);
+analogWrite(10,0);
+analogWrite(11,150);
+delay(80);
+analogWrite(3,150); //tuuzyou tenmetu
+analogWrite(5,150);
+analogWrite(6,150);
+analogWrite(9,0);
+analogWrite(10,0);
+analogWrite(11,0);
+delay(80);
+analogWrite(3,150); //tuuzyou tenmetu
+analogWrite(5,150);
+analogWrite(6,150);
+analogWrite(9,150);
+analogWrite(10,150);
+analogWrite(11,150);
+delay(80);
+analogWrite(3,0); //tuuzyou tenmetu
+analogWrite(5,150);
+analogWrite(6,150);
+analogWrite(9,150);
+analogWrite(10,150);
+analogWrite(11,150);
+delay(80);
+analogWrite(3,0); //tuuzyou tenmetu
+analogWrite(5,0);
+analogWrite(6,150);
+analogWrite(9,150);
+analogWrite(10,150);
+analogWrite(11,150);
+delay(80);
+analogWrite(3,0); //tuuzyou tenmetu
+analogWrite(5,0);
+analogWrite(6,150);
+analogWrite(9,150);
+analogWrite(10,150);
+analogWrite(11,150);
+delay(80);
+analogWrite(3,0); //tuuzyou tenmetu
+analogWrite(5,0);
+analogWrite(6,0);
+analogWrite(9,150);
+analogWrite(10,150);
+analogWrite(11,150);
+delay(80);
+ }
+}
+void LED_23() {  
+//kougo suro-tenmetu
+for(int x=0; x<200; x++){
+analogWrite(3,x); //tuuzyou tenmetu
+analogWrite(5,x);
+analogWrite(6,x);
+delay(2);
+}
+
+for(int x=200; x>=0; x--){
+analogWrite(3,x); //tuuzyou tenmetu
+analogWrite(5,x);
+analogWrite(6,x);
+delay(2);
+
+}
+for(int x=0; x<200; x++){
+
+analogWrite(9,x);
+analogWrite(10,x);
+analogWrite(11,x);
+delay(2);
+}
+for(int x=200; x>=0; x--){
+analogWrite(9,x);
+analogWrite(10,x);
+analogWrite(11,x);
+delay(2);
+}
+}
+
+ void LED_24() {
+//交互黒点滅
+analogWrite(6,200);
+analogWrite(11,200);
+
+analogWrite(3,30); 
+analogWrite(5,30);
+analogWrite(9,30); 
+analogWrite(10,30);
+delay(80);
+analogWrite(3,0); 
+analogWrite(5,0);
+analogWrite(9,0); 
+analogWrite(10,0);
+delay(70);
+analogWrite(3,50); 
+analogWrite(5,50);
+analogWrite(9,50); 
+analogWrite(10,50);
+delay(80);
+analogWrite(3,0); 
+analogWrite(5,0);
+analogWrite(9,0); 
+analogWrite(10,0);
+delay(70);
+analogWrite(3,250); 
+analogWrite(5,250);
+analogWrite(9,30); 
+analogWrite(10,30);
+delay(80);
+analogWrite(3,0); 
+analogWrite(5,0);
+analogWrite(9,0); 
+analogWrite(10,0);
+delay(70);
+analogWrite(3,250); 
+analogWrite(5,250);
+analogWrite(9,30); 
+analogWrite(10,30);
+delay(80);
+analogWrite(3,0); 
+analogWrite(5,0);
+analogWrite(9,0); 
+analogWrite(10,0);
+delay(70);
+analogWrite(3,30); 
+analogWrite(5,30);
+analogWrite(9,30); 
+analogWrite(10,30);
+delay(70);
+analogWrite(3,0); 
+analogWrite(5,0);
+analogWrite(9,0); 
+analogWrite(10,0);
+delay(70);
+analogWrite(3,50); 
+analogWrite(5,50);
+analogWrite(9,50); 
+analogWrite(10,50);
+delay(70);
+analogWrite(3,0); 
+analogWrite(5,0);
+analogWrite(9,0); 
+analogWrite(10,0);
+delay(70);
+analogWrite(3,30); 
+analogWrite(5,30);
+analogWrite(9,250); 
+analogWrite(10,250);
+delay(70);
+analogWrite(3,0); 
+analogWrite(5,0);
+analogWrite(9,0); 
+analogWrite(10,0);
+delay(70);
+analogWrite(3,30); 
+analogWrite(5,30);
+analogWrite(9,250); 
+analogWrite(10,250);
+delay(70);
+analogWrite(3,0); 
+analogWrite(5,0);
+analogWrite(9,0); 
+analogWrite(10,0);
+delay(70);
+ }
+void LED_25() {
+//tikatika kurosayuuidou
+analogWrite(6,200);
+analogWrite(11,200);
+
+analogWrite(3,200); 
+analogWrite(5,200);
+analogWrite(9,200); 
+analogWrite(10,200);
+delay(80);
+analogWrite(3,0); 
+analogWrite(5,0);
+analogWrite(9,0); 
+analogWrite(10,0);
+delay(70);
+analogWrite(3,120); 
+analogWrite(5,120);
+analogWrite(9,120); 
+analogWrite(10,120);
+delay(80);
+analogWrite(3,0); 
+analogWrite(5,0);
+analogWrite(9,0); 
+analogWrite(10,0);
+delay(70);
+analogWrite(3,0); 
+analogWrite(5,0);
+analogWrite(9,200); 
+analogWrite(10,200);
+delay(80);
+analogWrite(3,0); 
+analogWrite(5,0);
+analogWrite(9,0); 
+analogWrite(10,0);
+delay(70);
+analogWrite(3,0); 
+analogWrite(5,0);
+analogWrite(9,120); 
+analogWrite(10,120);
+delay(80);
+analogWrite(3,0); 
+analogWrite(5,0);
+analogWrite(9,0); 
+analogWrite(10,0);
+delay(70);
+analogWrite(3,200); 
+analogWrite(5,200);
+analogWrite(9,200); 
+analogWrite(10,200);
+delay(70);
+analogWrite(3,0); 
+analogWrite(5,0);
+analogWrite(9,0); 
+analogWrite(10,0);
+delay(70);
+analogWrite(3,120); 
+analogWrite(5,120);
+analogWrite(9,120); 
+analogWrite(10,120);
+delay(70);
+analogWrite(3,0); 
+analogWrite(5,0);
+analogWrite(9,0); 
+analogWrite(10,0);
+delay(70);
+analogWrite(3,200); 
+analogWrite(5,200);
+analogWrite(9,0); 
+analogWrite(10,0);
+delay(70);
+analogWrite(3,0); 
+analogWrite(5,0);
+analogWrite(9,0); 
+analogWrite(10,0);
+delay(70);
+analogWrite(3,120); 
+analogWrite(5,120);
+analogWrite(9,0); 
+analogWrite(10,0);
+delay(70);
+analogWrite(3,0); 
+analogWrite(5,0);
+analogWrite(9,0); 
+analogWrite(10,0);
+delay(70);
+}
+void LED_26() {
+
+//違和感２
+analogWrite(6,200);
+analogWrite(11,0);
+for(int x=0; x<200; x++){ //suro tenmetu
+analogWrite(3,x);
+analogWrite(5,x);
+analogWrite(9,x);
+analogWrite(10,x);
+delay(2);
+}
+analogWrite(11,200);
+analogWrite(6,0);
+for(int x=200; x>=0; x--){
+analogWrite(3,x);
+analogWrite(5,x);
+analogWrite(9,x);
+analogWrite(10,x);
+delay(2);
+}
+}
+
+void LED_27() {
+  // 違和感２　交互　スロー
+analogWrite(6,200);
+analogWrite(11,0);
+for(int x=0; x<200; x++){ //suro tenmetu
+analogWrite(3,x);
+analogWrite(5,x);
+analogWrite(9,x);
+analogWrite(10,x);
+delay(4);
+}
+analogWrite(11,200);
+analogWrite(6,0);
+for(int x=200; x>=0; x--){
+analogWrite(3,x);
+analogWrite(5,x);
+analogWrite(9,x);
+analogWrite(10,x);
+delay(4);
+}
+}
+
+
+void LED_28() {
+//チカチカ左右
+analogWrite(3,220);
+analogWrite(5,220);
+analogWrite(6,220);
+analogWrite(9,220);
+analogWrite(10,220);
+analogWrite(11,220);
+delay(80);
+analogWrite(3,0);
+analogWrite(5,0);
+analogWrite(6,0);
+analogWrite(9,0);
+analogWrite(10,0);
+analogWrite(11,0);
+delay(70);
+analogWrite(3,150);
+analogWrite(5,150);
+analogWrite(6,150);
+analogWrite(9,150);
+analogWrite(10,150);
+analogWrite(11,150);
+delay(80);
+analogWrite(3,0);
+analogWrite(5,0);
+analogWrite(6,0);
+analogWrite(9,0);
+analogWrite(10,0);
+analogWrite(11,0);
+delay(70);
+analogWrite(3,0);
+analogWrite(5,0);
+analogWrite(6,0);
+analogWrite(9,220);
+analogWrite(10,220);
+analogWrite(11,220);
+delay(80);
+analogWrite(3,0);
+analogWrite(5,0);
+analogWrite(6,0);
+analogWrite(9,0);
+analogWrite(10,0);
+analogWrite(11,0);
+delay(70);
+analogWrite(3,0);
+analogWrite(5,0);
+analogWrite(6,0);
+analogWrite(9,150);
+analogWrite(10,150);
+analogWrite(11,150);
+delay(80);
+analogWrite(3,0);
+analogWrite(5,0);
+analogWrite(6,0);
+analogWrite(9,0);
+analogWrite(10,0);
+analogWrite(11,0);
+delay(70);
+analogWrite(3,220);
+analogWrite(5,220);
+analogWrite(6,220);
+analogWrite(9,220);
+analogWrite(10,220);
+analogWrite(11,220);
+delay(70);
+analogWrite(3,0);
+analogWrite(5,0);
+analogWrite(6,0);
+analogWrite(9,0);
+analogWrite(10,0);
+analogWrite(11,0);
+delay(70);
+analogWrite(3,150);
+analogWrite(5,150);
+analogWrite(6,150);
+analogWrite(9,150);
+analogWrite(10,150);
+analogWrite(11,150);
+delay(70);
+analogWrite(3,0);
+analogWrite(5,0);
+analogWrite(6,0);
+analogWrite(9,0);
+analogWrite(10,0);
+analogWrite(11,0);
+delay(70);
+analogWrite(3,220);
+analogWrite(5,220);
+analogWrite(6,220);
+analogWrite(9,0);
+analogWrite(10,0);
+analogWrite(11,0);
+delay(70);
+analogWrite(3,0);
+analogWrite(5,0);
+analogWrite(6,0);
+analogWrite(9,0);
+analogWrite(10,0);
+analogWrite(11,0);
+delay(70);
+analogWrite(3,150);
+analogWrite(5,150);
+analogWrite(6,150);
+analogWrite(9,0);
+analogWrite(10,0);
+analogWrite(11,0);
+delay(70);
+analogWrite(3,0);
+analogWrite(5,0);
+analogWrite(6,0);
+analogWrite(9,0);
+analogWrite(10,0);
+analogWrite(11,0);
+delay(70);
+analogWrite(3,220);
+analogWrite(5,220);
+analogWrite(6,220);
+analogWrite(9,220);
+analogWrite(10,220);
+analogWrite(11,220);
+delay(80);
+analogWrite(3,0);
+analogWrite(5,0);
+analogWrite(6,0);
+analogWrite(9,0);
+analogWrite(10,0);
+analogWrite(11,0);
+delay(70);
+analogWrite(3,150);
+analogWrite(5,150);
+analogWrite(6,150);
+analogWrite(9,150);
+analogWrite(10,150);
+analogWrite(11,150);
+delay(80);
+analogWrite(3,0);
+analogWrite(5,0);
+analogWrite(6,0);
+analogWrite(9,0);
+analogWrite(10,0);
+analogWrite(11,0);
+delay(70);
+analogWrite(3,0);
+analogWrite(5,0);
+analogWrite(6,0);
+analogWrite(9,220);
+analogWrite(10,220);
+analogWrite(11,220);
+delay(80);
+analogWrite(3,0);
+analogWrite(5,0);
+analogWrite(6,0);
+analogWrite(9,0);
+analogWrite(10,0);
+analogWrite(11,0);
+delay(70);
+analogWrite(3,0);
+analogWrite(5,0);
+analogWrite(6,0);
+analogWrite(9,150);
+analogWrite(10,150);
+analogWrite(11,150);
+delay(80);
+analogWrite(3,0);
+analogWrite(5,0);
+analogWrite(6,0);
+analogWrite(9,0);
+analogWrite(10,0);
+analogWrite(11,0);
+delay(70);
+analogWrite(3,220);
+analogWrite(5,220);
+analogWrite(6,220);
+analogWrite(9,220);
+analogWrite(10,220);
+analogWrite(11,220);
+delay(70);
+analogWrite(3,0);
+analogWrite(5,0);
+analogWrite(6,0);
+analogWrite(9,0);
+analogWrite(10,0);
+analogWrite(11,0);
+delay(70);
+analogWrite(3,150);
+analogWrite(5,150);
+analogWrite(6,150);
+analogWrite(9,150);
+analogWrite(10,150);
+analogWrite(11,150);
+delay(70);
+analogWrite(3,0);
+analogWrite(5,0);
+analogWrite(6,0);
+analogWrite(9,0);
+analogWrite(10,0);
+analogWrite(11,0);
+delay(70);
+analogWrite(3,220);
+analogWrite(5,220);
+analogWrite(6,220);
+analogWrite(9,0);
+analogWrite(10,0);
+analogWrite(11,0);
+delay(70);
+analogWrite(3,0);
+analogWrite(5,0);
+analogWrite(6,0);
+analogWrite(9,0);
+analogWrite(10,0);
+analogWrite(11,0);
+delay(70);
+analogWrite(3,150);
+analogWrite(5,150);
+analogWrite(6,150);
+analogWrite(9,0);
+analogWrite(10,0);
+analogWrite(11,0);
+delay(70);
+analogWrite(3,0);
+analogWrite(5,0);
+analogWrite(6,0);
+analogWrite(9,0);
+analogWrite(10,0);
+analogWrite(11,0);
+delay(70);
+}
+
