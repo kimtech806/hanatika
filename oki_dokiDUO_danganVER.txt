@@ -1,0 +1,2681 @@
+
+
+
+
+
+#include "U8glib.h"
+
+U8GLIB_SSD1306_128X64 u8g(U8G_I2C_OPT_NONE|U8G_I2C_OPT_DEV_0);  // I2C / TWI 
+long randNumber;
+#include <SoftwareSerial.h>
+SoftwareSerial Serial1(12,13);
+#include <avr/wdt.h>
+#include <EEPROM.h>
+//Arduinoをリセットする
+void software_reset() {
+    wdt_disable();
+    wdt_enable(WDTO_15MS);
+    while (1) {}
+} 
+byte Load_Bootstate() {
+    int state;
+    state = EEPROM.read(0);
+    return state;
+}
+ void Set_Bootstate(int state) {
+    EEPROM.write(0, state);
+}
+int stateD;             // pin states
+int stateF;             // pin states
+int adata = 0;           // rotate data
+
+unsigned char order[4] = {0xAA,0x06,0x00,0xB0};
+long moti;
+void setup(){
+pinMode(2,INPUT_PULLUP);
+pinMode(3,OUTPUT); //big
+pinMode(4,OUTPUT); //reg
+pinMode(5,OUTPUT);//loss 暗転
+pinMode(6,OUTPUT);//回転数　BRハズレ
+pinMode(7,OUTPUT);//バイブ
+pinMode(8,OUTPUT);//光る(割り込みハイビスカス)
+pinMode(9,OUTPUT);//回転数リセット
+pinMode(15,OUTPUT);//mode
+pinMode(16,OUTPUT);//mode
+randomSeed(analogRead(3));
+ Serial1.begin(9600);
+pinMode(10,INPUT_PULLUP);//d 10液晶モード
+pinMode(11,OUTPUT);//d11カナランプ
+//d12.13 音源,ｄ14 モード切替,d17 ランダム,d18,19 液晶 
+u8g.setFont(u8g_font_courB18);
+  if ( u8g.getMode() == U8G_MODE_R3G3B2 ) {
+    u8g.setColorIndex(255);     // white
+  }
+  else if ( u8g.getMode() == U8G_MODE_GRAY2BIT ) {
+    u8g.setColorIndex(3);         // max intensity
+  }
+  else if ( u8g.getMode() == U8G_MODE_BW ) {
+    u8g.setColorIndex(1);         // pixel on
+  }
+  else if ( u8g.getMode() == U8G_MODE_HICOLOR ) {
+    u8g.setHiColorByRGB(255,255,255);
+  }
+
+ volume(0x1E);//Volume settings 0x00-0x1E
+    if (Load_Bootstate() == 0) { //メモリに0が書いてあるので再起動する
+        Set_Bootstate(1); //EEPROMに1を書いておく　次は通常起動
+        delay(500);
+        software_reset();
+    }
+    Set_Bootstate(0); //メモリに0を書いておく.
+    u8g.firstPage();  
+  do {
+     u8g.setColorIndex(1);
+u8g.drawStr( 21, 27, "KIMTECH");
+u8g.drawStr( 21, 55, "SLOT");
+} while ( u8g.nextPage() );
+delay(1000);
+v_blank();
+delay(200);
+}
+
+int vmode=0;//mo-do　　
+byte i = 0;//kakuhen 
+int stateZ = LOW;
+int autm = 0; 
+
+int stc = 0;
+byte k = 0;//曲変化
+byte big_p = 0;
+byte reg_p = 0;
+int game_c = 0;//通常ゲームのカウント
+int o_br = 0;//両ボーナス合算
+byte o_rush = 0;//オキドキRUSHフラグ
+
+
+
+void loop() {
+  // put your main code here, to run repeatedly:
+stateD = digitalRead(2);                // read
+   if ( stateD == 1 && stateF == 0 ) // plus count
+     adata++;
+     stateF = stateD;
+delay(10);
+switch(i){
+case 0:
+if(adata>=1){  
+moti = random(1,65537);
+}
+break;
+case 1:
+if(adata>=1){  
+moti = random(1,7500);//ドキドキ1/27
+}
+break;
+}
+
+if( adata >= 1){
+adata -= 1;
+} 
+int s_set = analogRead(A0);
+stateZ =digitalRead(10);
+
+if((s_set >= 0)&&(s_set <= 350)){
+//green  　通常mode●
+digitalWrite(15,HIGH); 
+digitalWrite(16,LOW); 
+while(stateZ == HIGH){
+    while(autm == 0){
+stateZ =digitalRead(10);
+moti = random(1,65537);
+int s_set = analogRead(A0);
+n_spv_2();
+stateZ =digitalRead(10);
+}
+autm = 0;
+}
+
+if(vmode == 3){//vmode3　B    RUSH18%    BIG 3x3932   o_rush  ドキドキ1/5 13107 6553x2br
+//ボーナス準備BR 
+if(moti ==0){
+// reset
+s_reset();
+}
+ else if((moti >= 1)&&(moti <= 17911)){//
+nn_big();
+ }
+ else if((moti >= 17912)&&(moti <= 21844)){//rush1
+n_big1();
+vmode = 7;
+big_p++;
+o_br++;
+o_rush = 1;
+game_c = 0;
+C_cyale_1();
+ }
+ else if((moti >= 21845)&&(moti <= 28398)){//i6553 1
+nn_big();
+i= 1;
+ }
+ else if((moti >= 28399)&&(moti <= 39756)){//
+nn_big();
+ }
+ else if((moti >= 39757)&&(moti <= 43689)){//rush2
+n_big1();
+vmode = 7;
+big_p++;
+o_br++;
+o_rush = 1;
+game_c = 0;
+C_cyale_1();
+ }
+ else if((moti >= 43690)&&(moti <= 50243)){//i6553 2
+nn_big();
+i= 1;
+ }
+ else if((moti >= 50244)&&(moti <= 61604)){//
+nn_big();
+ }
+ else if((moti >= 61605)&&(moti <= 65537)){//rush3
+n_big1();
+vmode = 7;
+big_p++;
+o_br++;
+o_rush = 1;
+game_c = 0;
+C_cyale_1();
+ }
+}
+
+if(vmode == 2){//BR　4：１ 13107x5   RUSH18%   9437 BIG 3x3145    o_rush
+//ボーナス準備BR 
+if(moti ==0){
+// reset
+s_reset();
+}
+ else if((moti >= 1)&&(moti <= 8953)){//
+n_big1();
+vmode = 7;
+big_p++;
+o_br++;
+if (game_c >= 799){//ゲーム数７９９以上はRUSH
+o_rush = 1;
+C_cyale_1();
+}
+else if (o_br >= 10){//両ボーナス１０回以上でRUSH
+o_rush = 1;
+C_cyale_1();
+}
+else{
+C_cyale_2();
+}
+game_c = 0;
+ }
+  else if((moti >= 8954)&&(moti <= 22061)){//
+n_reg1();
+vmode = 7;
+reg_p++;
+o_br++;
+if (game_c >= 799){//ゲーム数７９９以上はRUSH
+o_rush = 1;
+C_cyale_1();
+}
+else if (o_br >= 10){//両ボーナス１０回以上でRUSH
+o_rush = 1;
+C_cyale_1();
+}
+else{
+
+}
+game_c = 0;
+ }
+ else if((moti >= 22062)&&(moti <= 31499)){//rush1
+n_big1();
+vmode = 7;
+big_p++;
+o_br++;
+o_rush = 1;
+C_cyale_1();
+game_c = 0;
+ }
+ else if((moti >= 31500)&&(moti <= 65537)){//
+n_big1();
+vmode = 7;
+big_p++;
+o_br++;
+if (game_c >= 799){//ゲーム数７９９以上はRUSH
+o_rush = 1;
+C_cyale_1();
+}
+else if (o_br >= 10){//両ボーナス１０回以上でRUSH
+o_rush = 1;
+C_cyale_1();
+}
+else{
+C_cyale_2();
+}
+game_c = 0;
+ }
+}
+
+if(vmode == 1){//br 1;2 21845;43690 rush18% 3932  i20% 13107
+//ボーナス準備BR 
+if(moti ==0){
+// reset
+s_reset();
+}
+ else if((moti >= 1)&&(moti <= 3786)){//
+nn_big();
+ }
+ else if((moti >= 3787)&&(moti <= 6407)){//rush1  2620
+digitalWrite(11,LOW); 
+digitalWrite(3,LOW);
+digitalWrite(4,LOW); 
+digitalWrite(5,LOW); 
+digitalWrite(6,HIGH); 
+digitalWrite(7,LOW);  
+digitalWrite(8,LOW); 
+digitalWrite(9,LOW); 
+v_blank();
+v_freeze();
+play(0x0d); //itigeki
+delay(13000); 
+game_c++;
+digitalWrite(3,LOW);//reset
+digitalWrite(4,LOW);
+digitalWrite(5,HIGH); 
+digitalWrite(6,LOW); 
+digitalWrite(7,LOW);  
+digitalWrite(8,LOW); 
+digitalWrite(9,LOW); 
+play(0x00);
+delay(30);
+ stateZ = LOW;
+ stateD = LOW;
+while(stateZ == LOW && stateD == LOW){
+stateZ =digitalRead(10);
+stateD = digitalRead(2);                // read
+   if ( stateD == 1 && stateF == 0 ) // plus count
+     stateF = stateD;
+delay(10);
+}
+digitalWrite(6,HIGH);  
+digitalWrite(3,HIGH);  
+digitalWrite(5,LOW);  
+play(0x11);
+delay(12500); 
+v_blank();
+delay(200);
+v_BIG();
+delay(400);
+play(0x01);
+delay(39500);
+digitalWrite(3,LOW); 
+digitalWrite(9,HIGH);
+v_blank();
+delay(1500);
+vmode = 7;
+big_p++;
+o_br++;
+o_rush = 1;
+C_cyale_1();
+game_c = 0;
+ }
+  else if((moti >= 6408)&&(moti <= 17477)){//
+nm_reg();
+ }
+ else if((moti >= 17478)&&(moti <= 24031)){//6553 1
+nn_big();
+i= 1;
+ }
+ else if((moti >= 24032)&&(moti <= 27818)){//
+nn_big();
+ }
+ else if((moti >= 27819)&&(moti <= 29128)){//rush2
+n_big1();
+vmode = 7;
+big_p++;
+o_br++;
+o_rush = 1;
+C_cyale_1();
+game_c = 0;
+ }
+  else if((moti >= 29129)&&(moti <= 41508)){//
+nm_reg();
+ }
+ else if((moti >= 41509)&&(moti <= 45295)){//
+nn_big();
+ }
+ else if((moti >= 45296)&&(moti <= 46606)){//rush3
+n_big1();
+vmode = 7;
+big_p++;
+o_br++;
+o_rush = 1;
+C_cyale_1();
+game_c = 0;
+ }
+  else if((moti >= 46607)&&(moti <= 53160)){//6553 2
+nm_reg();
+i= 1;
+ }
+  else if((moti >= 53161)&&(moti <= 65537)){//
+nm_reg();
+ }
+}
+
+if(vmode == 0){
+//低確　合算
+if(moti ==0){//低確　1/422 155 25 t61 hch20 4 hsch20 4  fz8192 8 ch 1/70 936 187  sch1/655 120 24   1/383
+// reset 
+s_reset();
+}
+ else if((moti >= 1)&&(moti <= 721)){//
+n_loss();
+ }
+  else if((moti >= 722)&&(moti <= 940)){//itigeki
+n_loss11();
+ }
+ else if((moti >= 941)&&(moti <= 966)){//ボーナス１　25
+n_loss();
+vmode = 1;
+ }
+ else if((moti >= 967)&&(moti <= 1153)){//ch1 187
+e_cherry();
+ }
+ else if((moti >= 1154)&&(moti <= 4500)){//
+n_loss();
+ }
+ else if((moti >= 4501)&&(moti <= 4504)){//hch1 4
+e_cherry();
+vmode = 3;
+ }
+ else if((moti >= 4505)&&(moti <= 8300)){//
+n_loss();
+ }
+ else if((moti >= 8301)&&(moti <= 8501)){//ハズレシード200
+n_loss1();
+ }
+ else if((moti >= 8502)&&(moti <= 8505)){//hsch1 4
+esp_cherry();
+vmode = 3;
+ }
+ else if((moti >= 8506)&&(moti <= 8535)){//sch1 24
+esp_cherry();
+ }
+ else if((moti >= 8536)&&(moti <= 9999)){//haz
+n_loss();
+ }
+
+ else if((moti >= 10000)&&(moti <= 10955)){//
+n_loss();
+ }
+ else if((moti >= 10956)&&(moti <= 10966)){//ボーナス2　10
+n_loss();
+vmode = 1;
+ }
+ else if((moti >= 10967)&&(moti <= 11153)){//ch2 187
+e_cherry();
+ }
+ else if((moti >= 11154)&&(moti <= 14500)){//
+n_loss();
+ }
+ else if((moti >= 14501)&&(moti <= 14504)){//hch2 4 
+e_cherry();
+vmode = 3;
+ }
+ else if((moti >= 14505)&&(moti <= 18300)){//
+n_loss();
+ }
+ else if((moti >= 18301)&&(moti <= 18501)){//itigeki200
+n_loss11();
+ }
+ else if((moti >= 18502)&&(moti <= 18505)){//hsch2 4
+esp_cherry();
+vmode = 3;
+ }
+ else if((moti >= 18506)&&(moti <= 18535)){//sch2 24
+esp_cherry();
+ }
+ else if((moti >= 18536)&&(moti <= 19999)){//haz
+n_loss();
+ }
+
+ else if((moti >= 20000)&&(moti <= 20940)){//
+n_loss();
+ }
+ else if((moti >= 20941)&&(moti <= 20966)){//ボーナス3　25
+n_loss();
+vmode = 1;
+ }
+ else if((moti >= 20967)&&(moti <= 21153)){//ch3 187
+e_cherry();
+ }
+ else if((moti >= 21154)&&(moti <= 24500)){//
+n_loss();
+ }
+ else if((moti >= 24501)&&(moti <= 24504)){//hch3 4
+e_cherry();
+vmode = 3;
+ }
+ else if((moti >= 24505)&&(moti <= 28300)){//
+n_loss();
+ }
+ else if((moti >= 28301)&&(moti <= 28501)){//ハズレシード200
+n_loss();
+ }
+ else if((moti >= 28502)&&(moti <= 28505)){//hsch3 4 
+esp_cherry();
+vmode = 3;
+ }
+ else if((moti >= 28506)&&(moti <= 28535)){//sch3 24
+esp_cherry();
+ }
+ else if((moti >= 28536)&&(moti <= 29999)){//haz
+n_loss();
+ }
+
+ else if((moti >= 30000)&&(moti <= 30940)){//
+n_loss();
+ }
+ else if((moti >= 30941)&&(moti <= 30952)){//ボーナス4　11
+n_loss();
+vmode = 1;
+ }
+ else if((moti >= 30953)&&(moti <= 30966)){//ボーナス4　13 
+n_loss();
+vmode = 1;
+ }
+ else if((moti >= 30967)&&(moti <= 31153)){//ch4 187
+e_cherry();
+ }
+ else if((moti >= 31154)&&(moti <= 34500)){//
+n_loss();
+ }
+ else if((moti >= 34501)&&(moti <= 34504)){//hch4 4
+e_cherry();
+vmode = 3;
+ }
+ else if((moti >= 34505)&&(moti <= 38300)){//
+n_loss();
+ }
+ else if((moti >= 38301)&&(moti <= 38501)){//ハズレシード200
+n_loss();
+ }
+ else if((moti >= 38502)&&(moti <= 38505)){//hsch4 4
+esp_cherry();
+vmode = 3;
+ }
+ else if((moti >= 38506)&&(moti <= 38535)){//sch4 24
+esp_cherry();
+ }
+ else if((moti >= 38536)&&(moti <= 39999)){//haz
+n_loss();
+ }
+
+ else if((moti >= 40000)&&(moti <= 40940)){//
+n_loss();
+ }
+ else if((moti >= 40941)&&(moti <= 40966)){//ボーナス5　25
+n_loss();
+vmode = 1;
+ }
+ else if((moti >= 40967)&&(moti <= 41153)){//ch5 187
+e_cherry();
+ }
+ else if((moti >= 41154)&&(moti <= 44500)){//
+n_loss();
+ }
+ else if((moti >= 44501)&&(moti <= 44504)){//hch5 4
+e_cherry();
+vmode = 3;
+ }
+ else if((moti >= 44505)&&(moti <= 48300)){//
+n_loss();
+ }
+ else if((moti >= 48301)&&(moti <= 48501)){//ハズレシード200
+n_loss();
+ }
+ else if((moti >= 48502)&&(moti <= 48505)){//hsch5 4
+esp_cherry();
+vmode = 3;
+ }
+ else if((moti >= 48506)&&(moti <= 48535)){//sch5 24
+esp_cherry();
+ }
+ else if((moti >= 48536)&&(moti <= 49999)){//haz
+n_loss();
+ }
+
+ else if((moti >= 50000)&&(moti <= 50021)){//hch6 
+e_cherry();
+ }
+ else if((moti >= 50022)&&(moti <= 55537)){//ハズレ
+n_loss();
+ }
+ else if((moti >= 55538)&&(moti <= 55544)){//ボーナス6 6
+n_loss();
+vmode = 1;
+ }
+ else if((moti >= 55545)&&(moti <= 65537)){//ハズレ
+n_loss();
+ }
+}
+}
+
+
+
+
+
+
+
+
+else if((s_set >= 801)&&(s_set <= 1100)){
+// yellow  ST準備 mode●
+digitalWrite(15,HIGH); 
+digitalWrite(16,HIGH); 
+if(stateZ == HIGH){
+n_spv_3();
+}
+if(vmode == 3){//vmode3　B  B    RUSH18%    BIG 3x3932   o_rush   6553x2 ドキドキ 
+//ボーナス準備BR 
+if(moti ==0){
+// reset
+s_reset();
+}
+ else if((moti >= 1)&&(moti <= 6552)){//i 6553 1
+big_pr();
+k++;
+loop_big_s(k);
+if(k>=5){  
+k=0;
+}
+big_af();
+i = 1;
+ }
+ else if((moti >= 6553)&&(moti <= 17911)){//
+big_pr();
+k++;
+loop_big_s(k);
+if(k>=5){  
+k=0;
+}
+big_af();
+ }
+ else if((moti >= 17912)&&(moti <= 21844)){//rush1
+big_pr();
+k++;
+loop_big_s(k);
+if(k>=5){  
+k=0;
+}
+big_av();
+ }
+ else if((moti >= 21845)&&(moti <= 39756)){//
+big_pr();
+k++;
+loop_big_s(k);
+if(k>=5){  
+k=0;
+}
+big_af();
+ }
+ else if((moti >= 39757)&&(moti <= 43689)){//rush2
+big_pr();
+k++;
+loop_big_s(k);
+if(k>=5){  
+k=0;
+}
+big_av();
+ }
+ else if((moti >= 43690)&&(moti <= 50242)){//i 6553 2
+big_pr();
+k++;
+loop_big_s(k);
+if(k>=5){  
+k=0;
+}
+i= 1;
+big_af();
+ }
+ else if((moti >= 50243)&&(moti <= 61604)){//
+big_pr();
+k++;
+loop_big_s(k);
+if(k>=5){  
+k=0;
+}
+big_af();
+ }
+ else if((moti >= 61605)&&(moti <= 65537)){//rush3
+big_pr();
+k++;
+loop_big_s(k);
+if(k>=5){  
+k=0;
+}
+big_av();
+ }
+}
+
+if(vmode == 2){//vmode2　o_rush専用テーブル　BR４；１
+//ボーナス準備BR 
+if(moti ==0){
+// reset
+s_reset();
+}
+ else if((moti >= 1)&&(moti <= 8953)){//
+digitalWrite(3,HIGH);  
+digitalWrite(6,HIGH); 
+digitalWrite(5,LOW); 
+digitalWrite(7,HIGH); 
+delay(1000);
+digitalWrite(7,LOW); 
+play(0x11);//sugoi
+delay(12500);
+v_blank();
+delay(200);
+v_BIG();
+delay(400);
+k++;
+loop_big_s(k);
+if(k>=5){  
+k=0;
+}
+digitalWrite(3,LOW); 
+digitalWrite(9,HIGH);
+v_blank();
+delay(500);
+vmode = 7;
+big_p++;
+game_c = 0;
+ }
+  else if((moti >= 8954)&&(moti <= 22061)){//
+n_reg1();
+vmode = 7;
+reg_p++;
+game_c = 0;
+ }
+ else if((moti >= 22062)&&(moti <= 32062)){ //1G 10000
+digitalWrite(3,HIGH);  
+digitalWrite(6,HIGH); 
+digitalWrite(5,LOW);  
+digitalWrite(7,HIGH); 
+delay(1000);
+digitalWrite(7,LOW); 
+play(0x11);//sugoi
+delay(12500);
+v_blank();
+delay(200);
+v_BIG();
+delay(400);
+k++;
+loop_big_s(k);
+if(k>=5){  
+k=0;
+}
+digitalWrite(3,LOW); 
+digitalWrite(9,HIGH);
+v_blank();
+delay(500);
+vmode = 7;
+big_p++;
+game_c = 0;
+
+play(0x12);//yatta-
+delay(4500);
+digitalWrite(3,LOW);//reset
+digitalWrite(4,LOW);
+digitalWrite(5,HIGH); 
+digitalWrite(6,LOW); 
+digitalWrite(7,LOW);  
+digitalWrite(8,LOW); 
+digitalWrite(9,LOW); 
+play(0x00);
+delay(30);
+ stateZ = LOW;
+ stateD = LOW;
+while(stateZ == LOW && stateD == LOW){
+stateZ =digitalRead(10);
+stateD = digitalRead(2);                // read
+   if ( stateD == 1 && stateF == 0 ) // plus count
+     stateF = stateD;
+delay(10);
+}
+digitalWrite(11,LOW); 
+digitalWrite(3,HIGH);  
+digitalWrite(6,HIGH); 
+digitalWrite(5,LOW);  
+play(0x13);
+delay(2300); 
+v_blank();
+delay(200);
+v_BIG();
+delay(400);
+play(0x14);//version up
+delay(43500);
+digitalWrite(3,LOW); 
+digitalWrite(9,HIGH);
+v_blank();
+delay(500);
+vmode = 7;
+big_p++;
+game_c = 0;
+ }
+ else if((moti >= 32063)&&(moti <= 65537)){//
+digitalWrite(3,HIGH);  
+digitalWrite(6,HIGH); 
+digitalWrite(5,LOW); 
+digitalWrite(7,HIGH); 
+delay(1000);
+digitalWrite(7,LOW); 
+play(0x11);//sugoi
+delay(12500); 
+v_blank();
+delay(200);
+v_BIG();
+delay(400);
+k++;
+loop_big_s(k);
+if(k>=5){  
+k=0;
+}
+digitalWrite(3,LOW); 
+digitalWrite(9,HIGH);
+v_blank();
+delay(500);
+vmode = 7;
+big_p++;
+game_c = 0;
+ }
+}
+
+if(vmode == 1){//br 1:2 21845;43690 rush18% 3932   i10% 6553
+//ボーナス準備BR 
+if(moti ==0){
+// reset
+s_reset();
+}
+ else if((moti >= 1)&&(moti <= 2184)){//
+big_pr();
+k++;
+loop_big_s(k);
+if(k>=5){  
+k=0;
+}
+big_af();
+ }
+ else if((moti >= 2185)&&(moti <= 12287)){//reg
+nn_reg();
+ }
+ else if((moti >= 12288)&&(moti <= 13380)){//
+big_pr();
+k++;
+loop_big_s(k);
+if(k>=5){  
+k=0;
+}
+big_af();
+ }
+ else if((moti >= 13381)&&(moti <= 14691)){//rush1
+big_pr();
+k++;
+loop_big_s(k);
+if(k>=5){  
+k=0;
+}
+big_av();
+ }
+  else if((moti >= 14692)&&(moti <= 24794)){//
+nn_reg();
+ }
+ else if((moti >= 24795)&&(moti <= 32112)){//
+big_pr();
+k++;
+loop_big_s(k);
+if(k>=5){  
+k=0;
+}
+big_af();
+ }
+ else if((moti >= 32113)&&(moti <= 34733)){//rush2n 2620
+digitalWrite(11,LOW); 
+digitalWrite(3,LOW);
+digitalWrite(4,LOW); 
+digitalWrite(5,LOW); 
+digitalWrite(6,HIGH); 
+digitalWrite(7,LOW);  
+digitalWrite(8,LOW); 
+digitalWrite(9,LOW); 
+v_blank();
+v_freeze();
+play(0x0d); //itigeki
+delay(13000); 
+game_c++;
+digitalWrite(3,LOW);//reset
+digitalWrite(4,LOW);
+digitalWrite(5,HIGH); 
+digitalWrite(6,LOW); 
+digitalWrite(7,LOW);  
+digitalWrite(8,LOW); 
+digitalWrite(9,LOW); 
+play(0x00);
+delay(30);
+ stateZ = LOW;
+ stateD = LOW;
+while(stateZ == LOW && stateD == LOW){
+stateZ =digitalRead(10);
+stateD = digitalRead(2);                // read
+   if ( stateD == 1 && stateF == 0 ) // plus count
+     stateF = stateD;
+delay(10);
+}
+digitalWrite(3,HIGH);  
+digitalWrite(6,HIGH); 
+digitalWrite(5,LOW); 
+play(0x11);
+delay(12500); 
+v_blank();
+delay(200);
+v_BIG();
+delay(400);
+k++;
+loop_big_s(k);
+if(k>=5){  
+k=0;
+}
+big_av();
+ }
+  else if((moti >= 34733)&&(moti <= 38009)){//i 3276
+nn_reg();
+i = 1;
+ }
+  else if((moti >= 38010)&&(moti <= 46804)){//
+nn_reg();
+ }
+ else if((moti >= 46805)&&(moti <= 50081)){//i 3276 1
+big_pr();
+k++;
+loop_big_s(k);
+if(k>=5){  
+k=0;
+}
+big_af();
+i = 1;
+ }
+ else if((moti >= 50082)&&(moti <= 54123)){//
+big_pr();
+k++;
+loop_big_s(k);
+if(k>=5){  
+k=0;
+}
+big_af();
+ }
+ else if((moti >= 54124)&&(moti <= 55434)){//rush3
+big_pr();
+k++;
+loop_big_s(k);
+if(k>=5){  
+k=0;
+}
+big_av();
+ }
+  else if((moti >= 55435)&&(moti <= 65537)){//
+nn_reg();
+ }
+}
+//低確　1/500 131 25 t61 hch20 4 hsch20 4  fz8192 8 ch 1/70 936 187  sch1/655 120 24   1/383
+// reset 
+//高確vmode0 1/95 690  542   hch 70 hsch 70 fz8192 8 
+//
+//6553  79%loop  1/24   275   235 20 20
+//ika  415     315*5=63  50*5=10  50*5=10  ch1455+hch140  1/41
+
+if(vmode == 0){
+//低確　合算
+if(moti ==0){
+// reset 
+s_reset();
+}
+else if((moti >= 1)&&(moti <= 889)){//
+if(o_rush == 0){
+n_loss3();
+}
+else if (o_rush >= 1){
+rush_mode();
+}
+}
+else if((moti >= 890)&&(moti <= 940)){//itigeki 50
+if(o_rush == 0){
+n_loss13();
+}
+else if (o_rush >= 1){
+rush_mode();
+}
+}
+ else if((moti >= 941)&&(moti <= 1057)){//655ボーナス１　117
+if(o_rush == 0){
+n_loss3();
+vmode = 1;
+}
+else if (o_rush >= 1){
+rush_mode();
+}
+}
+ else if((moti >= 1058)&&(moti <= 1407)){//ch1 350
+ if(o_rush == 0){
+e_cherry();
+}
+else if (o_rush >= 1){
+rush_mode();
+}
+}
+ else if((moti >= 1408)&&(moti <= 2999)){//
+if(o_rush == 0){
+n_loss3();
+}
+else if (o_rush >= 1){
+rush_mode();
+}
+}
+ else if((moti >= 3000)&&(moti <= 3028)){//655ボーナス2　29
+if(o_rush == 0){
+n_loss3();
+vmode = 1;
+}
+else if (o_rush >= 1){
+rush_mode();
+}
+}
+ else if((moti >= 3029)&&(moti <= 3117)){//655okureボーナス2　88
+if(o_rush == 0){
+n_loss23();
+vmode = 1;
+}
+else if (o_rush >= 1){
+rush_mode();
+}
+}
+ else if((moti >= 3118)&&(moti <= 3137)){//hch1 20
+if(o_rush == 0){
+e_cherry();
+vmode = 3;
+}
+else if (o_rush >= 1){
+rush_mode();
+}
+ }
+ else if((moti >= 3138)&&(moti <= 4999)){
+if(o_rush == 0){
+n_loss3();
+}
+else if (o_rush >= 1){
+rush_mode();
+}
+ }
+ else if((moti >= 5000)&&(moti <= 5019)){//hsch1 20
+if(o_rush == 0){
+esp_cherry();
+vmode = 3;
+}
+else if (o_rush >= 1){
+rush_mode();
+}
+ }
+ else if((moti >= 5020)&&(moti <= 5069)){//sch1 50
+ if(o_rush == 0){
+esp_cherry();
+}
+else if (o_rush >= 1){
+rush_mode();
+}
+ }
+ else if((moti >= 5070)&&(moti <= 6553)){
+if(o_rush == 0){
+n_loss3();
+}
+else if (o_rush >= 1){
+rush_mode();
+}
+ }
+ else if((moti >= 6554)&&(moti <= 14999)){//
+if(o_rush == 0){
+n_loss3();
+}
+else if (o_rush >= 1){
+rush_mode();
+}
+ }
+ else if((moti >= 15000)&&(moti <= 15062)){//ボーナス1　63
+if(o_rush == 0){
+n_loss3();
+vmode = 1;
+}
+else if (o_rush >= 1){
+rush_mode();
+}
+ }
+ else if((moti >= 15063)&&(moti <= 18999)){//
+if(o_rush == 0){
+n_loss3();
+}
+else if (o_rush >= 1){
+rush_mode();
+}
+ }
+ else if((moti >= 19000)&&(moti <= 19186)){//ch1 187
+if(o_rush == 0){
+e_cherry();
+}
+else if (o_rush >= 1){
+rush_mode();
+}
+ }
+ else if((moti >= 19187)&&(moti <= 21999)){//
+if(o_rush == 0){
+n_loss3();
+}
+else if (o_rush >= 1){
+rush_mode();
+}
+ }
+ else if((moti >= 22000)&&(moti <= 22009)){//hch1 10 
+if(o_rush == 0){
+e_cherry();
+vmode = 3;
+}
+else if (o_rush >= 1){
+rush_mode();
+}
+ }
+ else if((moti >= 22010)&&(moti <= 22209)){//ハズレシード200
+if(o_rush == 0){
+n_loss4();
+}
+else if (o_rush >= 1){
+rush_mode();
+}
+ }
+ else if((moti >= 22210)&&(moti <= 22219)){//hsch1 10
+if(o_rush == 0){
+esp_cherry();
+vmode = 3;
+}
+else if (o_rush >= 1){
+rush_mode();
+}
+ }
+ else if((moti >= 22220)&&(moti <= 22243)){//sch1 24
+ if(o_rush == 0){
+esp_cherry();
+}
+else if (o_rush >= 1){
+rush_mode();
+}
+ }
+ else if((moti >= 22244)&&(moti <= 24999)){//haz
+if(o_rush == 0){
+n_loss3();
+}
+else if (o_rush >= 1){
+rush_mode();
+}
+ }
+
+ else if((moti >= 25000)&&(moti <= 25062)){//ボーナス2　63
+if(o_rush == 0){
+n_loss3();
+vmode = 1;
+}
+else if (o_rush >= 1){
+rush_mode();
+}
+ }
+ else if((moti >= 25063)&&(moti <= 25249)){//ch2 187
+if(o_rush == 0){
+e_cherry();
+}
+else if (o_rush >= 1){
+rush_mode();
+}
+ }
+ else if((moti >= 25250)&&(moti <= 28999)){//
+if(o_rush == 0){
+n_loss3();
+}
+else if (o_rush >= 1){
+rush_mode();
+}
+ }
+ else if((moti >= 29000)&&(moti <= 29009)){//hch2 10
+if(o_rush == 0){
+e_cherry();
+vmode = 3;
+}
+else if (o_rush >= 1){
+rush_mode();
+}
+ }
+ else if((moti >= 29010)&&(moti <= 31798)){//
+if(o_rush == 0){
+n_loss3();
+}
+else if (o_rush >= 1){
+rush_mode();
+}
+ }
+ else if((moti >= 31799)&&(moti <= 31999)){//itigeki 200
+if(o_rush == 0){
+n_loss13();
+}
+else if (o_rush >= 1){
+rush_mode();
+}
+ }
+ else if((moti >= 32000)&&(moti <= 32009)){//hsch2 10
+if(o_rush == 0){
+esp_cherry();
+vmode = 3;
+}
+else if (o_rush >= 1){
+rush_mode();
+}
+ }
+ else if((moti >= 32010)&&(moti <= 32033)){//sch2 24
+ if(o_rush == 0){
+esp_cherry();
+}
+else if (o_rush >= 1){
+rush_mode();
+}
+ }
+ else if((moti >= 32034)&&(moti <= 33999)){//haz
+if(o_rush == 0){
+n_loss3();
+}
+else if (o_rush >= 1){
+rush_mode();
+}
+ }
+ else if((moti >= 34000)&&(moti <= 34999)){//
+if(o_rush == 0){
+n_loss3();
+}
+else if (o_rush >= 1){
+rush_mode();
+}
+ }
+ else if((moti >= 35000)&&(moti <= 35062)){//ボーナス3okure　63
+
+if(o_rush == 0){
+n_loss23();
+vmode = 1;
+}
+else if (o_rush >= 1){
+rush_mode();
+}
+ }
+ else if((moti >= 35063)&&(moti <= 35249)){//ch3 187
+ if(o_rush == 0){
+e_cherry();
+}
+else if (o_rush >= 1){
+rush_mode();
+}
+ }
+ else if((moti >= 35250)&&(moti <= 37999)){//
+if(o_rush == 0){
+n_loss3();
+}
+else if (o_rush >= 1){
+rush_mode();
+}
+ }
+ else if((moti >= 38000)&&(moti <= 38009)){//hch3 10
+
+if(o_rush == 0){
+e_cherry();
+vmode = 3;
+}
+else if (o_rush >= 1){
+rush_mode();
+}
+ }
+ else if((moti >= 38010)&&(moti <= 39999)){//
+if(o_rush == 0){
+n_loss3();
+}
+else if (o_rush >= 1){
+rush_mode();
+}
+ }
+ else if((moti >= 40000)&&(moti <= 40999)){//ハズレシード200
+if(o_rush == 0){
+n_loss3();
+}
+else if (o_rush >= 1){
+rush_mode();
+}
+ }
+ else if((moti >= 41000)&&(moti <= 41009)){//hsch3 10
+if(o_rush == 0){
+esp_cherry();
+vmode = 3;
+}
+else if (o_rush >= 1){
+rush_mode();
+}
+ }
+ else if((moti >= 41010)&&(moti <= 41033)){//sch3 24
+ if(o_rush == 0){
+esp_cherry();
+}
+else if (o_rush >= 1){
+rush_mode();
+}
+ }
+ else if((moti >= 41034)&&(moti <= 42999)){//haz
+if(o_rush == 0){
+n_loss3();
+}
+else if (o_rush >= 1){
+rush_mode();
+}
+ }
+ else if((moti >= 43000)&&(moti <= 44999)){//
+if(o_rush == 0){
+n_loss3();
+}
+else if (o_rush >= 1){
+rush_mode();
+}
+ }
+ else if((moti >= 45000)&&(moti <= 45007)){//ボーナス4　8
+if(o_rush == 0){
+n_loss3();
+vmode = 1;
+}
+else if (o_rush >= 1){
+rush_mode();
+}
+ }
+ else if((moti >= 45008)&&(moti <= 45062)){//ボーナス4　55
+if(o_rush == 0){
+n_loss3();
+vmode = 1;
+}
+else if (o_rush >= 1){
+rush_mode();
+}
+ }
+ else if((moti >= 45063)&&(moti <= 45249)){//ch4 187
+ if(o_rush == 0){
+e_cherry();
+}
+else if (o_rush >= 1){
+rush_mode();
+}
+ }
+ else if((moti >= 45250)&&(moti <= 46999)){//
+if(o_rush == 0){
+n_loss3();
+}
+else if (o_rush >= 1){
+rush_mode();
+}
+ }
+ else if((moti >= 47000)&&(moti <= 47009)){//hch4 10
+if(o_rush == 0){
+e_cherry();
+vmode = 3;
+}
+else if (o_rush >= 1){
+rush_mode();
+}
+ }
+ else if((moti >= 47010)&&(moti <= 48999)){//
+if(o_rush == 0){
+n_loss3();
+}
+else if (o_rush >= 1){
+rush_mode();
+}
+ }
+
+ else if((moti >= 49000)&&(moti <= 49009)){//hsch4 10
+if(o_rush == 0){
+esp_cherry();
+vmode = 3;
+}
+else if (o_rush >= 1){
+rush_mode();
+}
+}
+ else if((moti >= 49010)&&(moti <= 49033)){//sch4 24
+ if(o_rush == 0){
+esp_cherry();
+}
+else if (o_rush >= 1){
+rush_mode();
+}
+ }
+ else if((moti >= 49034)&&(moti <= 49999)){//haz
+if(o_rush == 0){
+n_loss3();
+}
+else if (o_rush >= 1){
+rush_mode();
+}
+ }
+ else if((moti >= 50000)&&(moti <= 50999)){//
+if(o_rush == 0){
+n_loss3();
+}
+else if (o_rush >= 1){
+rush_mode();
+}
+ }
+ else if((moti >= 51000)&&(moti <= 51062)){//ボーナス5　63
+if(o_rush == 0){
+n_loss3();
+vmode = 1;
+}
+else if (o_rush >= 1){
+rush_mode();
+}
+ }
+ else if((moti >= 51063)&&(moti <= 51249)){//ch5 187
+ if(o_rush == 0){
+e_cherry();
+}
+else if (o_rush >= 1){
+rush_mode();
+}
+ }
+ else if((moti >= 51250)&&(moti <= 59999)){//
+if(o_rush == 0){
+n_loss3();
+}
+else if (o_rush >= 1){
+rush_mode();
+}
+ }
+ else if((moti >= 60000)&&(moti <= 60009)){//hch5 10
+if(o_rush == 0){
+e_cherry();
+vmode = 3;
+}
+else if (o_rush >= 1){
+rush_mode();
+}
+ }
+ else if((moti >= 60010)&&(moti <= 60999)){//
+if(o_rush == 0){
+n_loss3();
+}
+else if (o_rush >= 1){
+rush_mode();
+}
+ }
+ else if((moti >= 61000)&&(moti <= 61009)){//hsch5 10
+if(o_rush == 0){
+esp_cherry();
+vmode = 3;
+}
+else if (o_rush >= 1){
+rush_mode();
+}
+ }
+ else if((moti >= 61010)&&(moti <= 61033)){//sch5 24
+ if(o_rush == 0){
+esp_cherry();
+}
+else if (o_rush >= 1){
+rush_mode();
+}
+ }
+ else if((moti >= 61034)&&(moti <= 62999)){//haz
+if(o_rush == 0){
+n_loss3();
+}
+else if (o_rush >= 1){
+rush_mode();
+}
+ }
+ else if((moti >= 63000)&&(moti <= 65537)){//ハズレ
+if(o_rush == 0){
+n_loss3();
+}
+else if (o_rush >= 1){
+rush_mode();
+}
+ }
+}
+}
+if(vmode == 7){
+vmode = 0;
+}
+if( moti >= 1){
+moti=0;
+}
+}
+
+
+void rush_mode(){
+v_blank();
+if (game_c <= 5){//ゲーム数1はRUSH
+digitalWrite(11,HIGH); 
+v_gogo();
+play(0x0e);//migiuti
+delay(6500);
+i= 0;
+}
+else{
+}
+ while(autm == 0){
+stateZ =digitalRead(10);
+moti = random(1,65537);
+int s_set = analogRead(A0);
+n_spv_8();
+stateZ =digitalRead(10);
+if( game_c >= 36){  //32Gまで。電源オンに依拠するのでボーナス、高低確ではgame_c を０に初期化する。
+autm = 1;
+} 
+}
+autm = 0;
+
+}
+
+byte loop_big_s(byte noise){//連中の音楽変化
+switch(noise){ 
+case 1:
+play(0x01);
+delay(39500);
+break;
+case 2:
+play(0x02);
+delay(39500);
+break;
+case 3:
+play(0x03);
+delay(43500);
+break;
+case 4:
+play(0x04);
+delay(37500);
+break;
+case 5:
+play(0x05);
+delay(41500);
+break;
+}
+}
+
+void n_spv_1(){//RUSH
+v_blank();
+//delay(200);
+u8g.firstPage();  
+  do {
+u8g.setColorIndex(1);
+u8g.drawStr( 5, 22, "OKIDOKI_RUSH");
+//u8g.drawStr( 100, 50, "REN");
+//u8g.setPrintPos(65,50);
+//u8g.print(big_p + reg_p); 
+  } while( u8g.nextPage() );
+}
+
+void n_spv_2(){//1/306   214    188 23 23    37 9 zitan
+stateZ =digitalRead(10);
+if((moti >= 1)&&(moti <= 999)){//
+n_loss6();
+ }
+ else if((moti >= 1000)&&(moti <= 1036)){//ボーナス１ 37　
+n_loss6();
+play(0x09);
+delay(1000);
+vmode = 1;
+autm = 1;
+ }
+ else if((moti >= 1037)&&(moti <= 5499)){//
+n_loss6();
+ }
+else if((moti >= 5500)&&(moti <= 5508)){//hチェ1 9
+play(0x09);
+delay(1000);
+e_cherry();
+vmode = 3;
+autm = 1;
+ }
+ else if((moti >= 5509)&&(moti <= 12999)){
+n_loss6();
+ }
+ else if((moti >= 13000)&&(moti <= 13016)){//ボーナス2　17
+n_loss6();
+play(0x09);
+delay(1000);
+vmode = 1;
+autm = 1;
+ }
+ else if((moti >= 13017)&&(moti <= 18999)){
+n_loss6();
+ }
+ else if((moti >= 19000)&&(moti <= 19008)){ //hチェ29
+play(0x09);
+delay(1000);
+e_cherry();
+vmode = 3;
+autm = 1;
+ }
+ else if((moti >= 19009)&&(moti <= 25999)){//haz
+n_loss6();
+ }
+ else if((moti >= 26000)&&(moti <= 26036)){//ボーナス3　37
+n_loss6();
+play(0x09);
+delay(1000);
+vmode = 1;
+autm = 1;
+ }
+ else if((moti >= 26037)&&(moti <= 27999)){//haz
+n_loss6();
+ }
+ else if((moti >= 28000)&&(moti <= 28008)){//hチェ3 9
+play(0x09);
+delay(1000);
+e_cherry();
+vmode = 3;
+autm = 1;
+ }
+ else if((moti >= 28009)&&(moti <= 30999)){//haz
+n_loss6();
+ }
+ else if((moti >= 31000)&&(moti <= 31036)){//ボーナス4　37
+n_loss6();
+play(0x09);
+delay(1000);
+vmode = 1;
+autm = 1;
+ }
+ else if((moti >= 31037)&&(moti <= 33999)){
+n_loss6();
+ }
+ else if((moti >= 34000)&&(moti <= 34008)){//hチェ4 9
+play(0x09);
+delay(1000);
+e_cherry();
+vmode = 3;
+autm = 1;
+ }
+ else if((moti >= 34009)&&(moti <= 49999)){//haz
+n_loss6();
+ }
+ else if((moti >= 50000)&&(moti <= 50039)){//ボーナス5　40
+n_loss6();
+play(0x09);
+delay(1000);
+vmode = 1;
+autm = 1;
+ }
+ else if((moti >= 50040)&&(moti <= 57999)){//haz
+n_loss6();
+ }
+ else if((moti >= 58000)&&(moti <= 58009)){//hチェ4 10
+play(0x09);
+delay(1000);
+e_cherry();
+vmode = 3;
+autm = 1;
+ }
+ else if((moti >= 58010)&&(moti <= 65537)){//haz
+n_loss6();
+ }
+digitalWrite(6,LOW); 
+//400位が時短によい
+delay(115);//60でカウント半分、115で完成
+digitalWrite(6,HIGH); 
+stateZ =digitalRead(10);
+delay(115);
+moti=0;
+stateZ =digitalRead(10);
+}
+
+void n_spv_8(){//1/20 1a3246   1G 738  22%   RUSH      
+stateZ =digitalRead(10);
+if((moti >= 1)&&(moti <= 5099)){//
+n_loss5();
+ }
+ else if((moti >= 5100)&&(moti <= 5119)){//20ボーナス52 6 645短レバウエイト　押して
+n_loss52();
+delay(1000);
+n_loss55();
+n_loss566();
+autm = 1;
+ }
+ else if((moti >= 5120)&&(moti <= 5200)){//180ボーナス52 6 645短レバウエイト　押して
+n_loss52();
+delay(1000);
+n_loss55();
+n_loss56();
+autm = 1;
+ }
+ else if((moti >= 5201)&&(moti <= 5540)){//340ボーナス１ 51 無音直当たり
+delay(2000);
+n_loss56();
+autm = 1;
+ }
+ else if((moti >= 5541)&&(moti <= 5591)){//50ボーナス１ 51 無音直当たり
+delay(2000);
+n_loss566();
+autm = 1;
+ }
+ else if((moti >= 5592)&&(moti <= 6150)){//
+n_loss5();
+delay(1000);
+ }
+ else if((moti >= 6151)&&(moti <= 6450)){//
+n_loss5();
+delay(2000);
+ }
+ else if((moti >= 6451)&&(moti <= 13999)){//
+n_loss5();
+ }
+ else if((moti >= 14000)&&(moti <= 14299)){//51 300
+n_loss51();
+ }
+else if((moti >= 14300)&&(moti <= 14319)){//20ボーナス１ 20 400短レバwait 押して
+n_loss52();
+delay(1000);
+n_loss55();
+n_loss566();
+autm = 1;
+ }
+else if((moti >= 14320)&&(moti <= 14399)){//80ボーナス１ 80 400短レバwait 押して
+n_loss52();
+delay(1000);
+n_loss55();
+n_loss56();
+autm = 1;
+ }
+ else if((moti >= 14400)&&(moti <= 14449)){//50ボーナス2 53 287　rush短レバ*2wait　おして
+n_loss53();
+delay(1000);
+n_loss55();
+n_loss566();
+autm = 1;
+ }
+ else if((moti >= 14450)&&(moti <= 14600)){//150ボーナス2 53 287　rush短レバ*2wait　おして
+n_loss53();
+delay(1000);
+n_loss55();
+n_loss56();
+autm = 1;
+ }
+ else if((moti >= 14601)&&(moti <= 26858)){//
+n_loss5();
+ }
+ else if((moti >= 26859)&&(moti <= 26998)){//58 200rush短レバ*2
+n_loss58();
+ }
+ else if((moti >= 26999)&&(moti <= 27598)){//
+n_loss5();
+ }
+ else if((moti >= 27599)&&(moti <= 27999)){//54 400レバロング
+n_loss54();
+ }
+ else if((moti >= 28000)&&(moti <= 28029)){//30ボーナス3 b52 150rush短レバwait　押して
+n_loss52();
+digitalWrite(7,HIGH); 
+delay(1000);
+digitalWrite(7,LOW);
+n_loss55();
+n_loss566();
+autm = 1;
+ }
+ else if((moti >= 28030)&&(moti <= 28149)){//120ボーナス3 b52 150rush短レバwait　押して
+n_loss52();
+digitalWrite(7,HIGH); 
+delay(1000);
+digitalWrite(7,LOW);
+n_loss55();
+n_loss56();
+autm = 1;
+ }
+ else if((moti >= 28150)&&(moti <= 28270)){//170ボーナス１ 170
+n_loss51;
+delay(1000);
+n_loss56();
+autm = 1;
+ }
+ else if((moti >= 28271)&&(moti <= 28319)){//ボーナス１ 170
+n_loss51;
+delay(1000);
+n_loss566();
+autm = 1;
+ }
+ else if((moti >= 28320)&&(moti <= 28369)){//
+n_loss5();
+ }
+ else if((moti >= 28370)&&(moti <= 28420)){//50ボーナス１ 100 
+n_loss54;
+delay(1000);
+n_loss566();
+autm = 1;
+ }
+ else if((moti >= 28421)&&(moti <= 28465)){//44ボーナス3 b53 220rush短レバ*2wait　押して
+n_loss53();
+digitalWrite(7,HIGH); 
+delay(1000);
+digitalWrite(7,LOW);
+n_loss55();
+n_loss566();
+autm = 1;
+ }
+ else if((moti >= 28466)&&(moti <= 28520)){//176ボーナス3 b53 220rush短レバ*2wait　押して
+n_loss53();
+digitalWrite(7,HIGH); 
+delay(1000);
+digitalWrite(7,LOW);
+n_loss55();
+n_loss56();
+autm = 1;
+ }
+ else if((moti >= 28521)&&(moti <= 28566)){//176ボーナス3 b53 220rush短レバ*2wait　押して
+n_loss53();
+digitalWrite(7,HIGH); 
+delay(1000);
+digitalWrite(7,LOW);
+n_loss55();
+n_loss566();
+autm = 1;
+ }
+ else if((moti >= 28567)&&(moti <= 28600)){//176ボーナス3 b53 220rush短レバ*2wait　押して
+n_loss53();
+play(0x13);
+delay(2300); 
+n_loss55();
+n_loss566();
+autm = 1;
+ }
+ else if((moti >= 28601)&&(moti <= 28641)){//176ボーナス3 b53 220rush短レバ*2wait　押して
+n_loss53();
+play(0x13);
+delay(2300); 
+n_loss55();
+n_loss56();
+autm = 1;
+ }
+ else if((moti >= 28642)&&(moti <= 32399)){//
+n_loss5();
+ }
+ else if((moti >= 32400)&&(moti <= 32799)){//51 
+n_loss51();
+ }
+ else if((moti >= 32800)&&(moti <= 32949)){//150ボーナス250 4  642　B直当たり
+play(0x13);
+delay(2600); 
+n_loss566();
+autm = 1;
+ }
+ else if((moti >= 32950)&&(moti <= 33049)){//
+n_loss5();
+ }
+ else if((moti >= 33050)&&(moti <= 33100)){//50ボーナス51 4  642　短レバ直当たり
+n_loss51();
+n_loss566();
+autm = 1;
+ }
+  else if((moti >= 33101)&&(moti <= 33426)){//325ボーナス51 4  642　短レバ直当たり
+n_loss51();
+n_loss56();
+autm = 1;
+ }
+ else if((moti >= 33427)&&(moti <= 33590)){//160ボーナス54 4  642長いレバ直当たり
+n_loss54();
+n_loss56();
+autm = 1;
+ }
+ else if((moti >= 33591)&&(moti <= 33641)){//50ボーナス54 4  642長いレバ直当たり
+n_loss54();
+n_loss566();
+autm = 1;
+ }
+ else if((moti >= 33642)&&(moti <= 46195)){//
+n_loss5();
+ }
+ else if((moti >= 46196)&&(moti <= 46296)){//100
+n_loss5();
+delay(1000);
+ } 
+else if((moti >= 46297)&&(moti <= 46397)){//100
+n_loss5();
+delay(2000);
+ }
+ else if((moti >= 46398)&&(moti <= 46698)){//52 300
+n_loss52();
+ }
+ else if((moti >= 46699)&&(moti <= 46999)){//300●300短レバ　押して　ハズレ
+n_loss52();
+delay(1000);
+n_loss55();
+play(0x15);
+delay(1000);
+ }
+ else if((moti >= 47000)&&(moti <= 47049)){//50ボーナス54 5 100　長いレバ　直当たり
+n_loss54();
+delay(2000);
+n_loss566();
+autm = 1;
+ }
+  else if((moti >= 47050)&&(moti <= 47199)){//150ボーナス 58 100rush長レバ　直当たり
+n_loss54();
+delay(1000);
+n_loss56();
+autm = 1;
+ }
+  else if((moti >= 47200)&&(moti <= 47259)){//60ボーナス 58 200rush短レバwait　押して
+n_loss52();
+delay(1000);
+n_loss55();
+n_loss566();
+autm = 1;
+ }
+  else if((moti >= 47260)&&(moti <= 47499)){//240ボーナス 58 200rush短レバwait　押して
+n_loss52();
+delay(1000);
+n_loss55();
+n_loss56();
+autm = 1;
+ }
+  else if((moti >= 47500)&&(moti <= 54299)){
+n_loss5();
+ }
+ else if((moti >= 54300)&&(moti <= 54549)){//51 250
+n_loss51();
+ }
+ else if((moti >= 54550)&&(moti <= 54814)){//53 200rush短レバ*2
+n_loss53();
+ }
+ else if((moti >= 54815)&&(moti <= 55115)){//53●300rush短レバ*2　押して　ハズレ
+n_loss53();
+delay(1000);
+n_loss55();
+play(0x15);
+delay(1000);
+ }
+ else if((moti >= 55116)&&(moti <= 55166)){//50ボーナス52 6 645短レバウエイト　押して
+n_loss52();
+delay(1000);
+n_loss55();
+n_loss566();
+autm = 1;
+ }
+ else if((moti >= 55167)&&(moti <= 55321)){//154ボーナス52 6 645短レバウエイト　押して
+n_loss52();
+delay(1000);
+n_loss55();
+n_loss56();
+autm = 1;
+ }
+   else if((moti >= 55322)&&(moti <= 55346)){//24ボーナス53 121 5rushレバwait　押して
+n_loss54();
+delay(1000);
+n_loss55();
+n_loss566();
+autm = 1;
+ }
+   else if((moti >= 55347)&&(moti <= 55443)){//100ボーナス53 121 5rushレバwait　押して
+n_loss54();
+delay(1000);
+n_loss55();
+n_loss56();
+autm = 1;
+ }
+  else if((moti >= 55444)&&(moti <= 55484)){//40ボーナス53 6 200rush短レバ*2wait　押して
+n_loss53();
+delay(1000);
+n_loss55();
+n_loss566();
+autm = 1;
+ }
+  else if((moti >= 55485)&&(moti <= 55644)){//160ボーナス53 6 200rush短レバ*2wait　押して
+n_loss53();
+delay(1000);
+n_loss55();
+n_loss56();
+autm = 1;
+ }
+ else if((moti >= 55645)&&(moti <= 65537)){//
+n_loss5();
+ }
+digitalWrite(6,LOW); 
+//400位が時短によい
+delay(99);//60でカウント半分、115で完成
+digitalWrite(6,HIGH); 
+stateZ =digitalRead(10);
+delay(99);
+moti=0;
+stateZ =digitalRead(10);
+}
+
+void n_spv_3(){//連数表示
+v_blank();
+delay(200);
+u8g.firstPage();  
+  do {
+u8g.setColorIndex(1);
+u8g.drawStr( 10, 22, "BIG REG");
+u8g.setPrintPos(0,50);
+u8g.print(o_br);  
+u8g.setPrintPos(30,50);
+u8g.print(big_p);  
+u8g.setPrintPos(80,50);
+u8g.print(reg_p); 
+  } while( u8g.nextPage() );
+}
+
+void n_spv_4(){
+v_blank();
+delay(200);
+u8g.firstPage();  
+  do {
+u8g.setColorIndex(1);
+u8g.drawStr( 30, 40, "PUSH");
+  } while( u8g.nextPage() );
+}
+
+void v_gogo(){
+     u8g.firstPage();  
+  do {
+ u8g.setColorIndex(1);
+u8g.drawStr( 30, 39, "RUSH!");
+u8g.drawLine(10, 31, 30, 20);//開始横x、開始縦y、終横x、終縦y
+u8g.drawLine(30, 20,25,0);
+u8g.drawLine(25,0,47,15);
+u8g.drawLine(47,15,54,0);
+u8g.drawLine(54,0,63,13);
+u8g.drawLine(63,13,70,1);
+u8g.drawLine(72,1,83,13);
+u8g.drawLine(83,13,95,0);
+u8g.drawLine(95,0,100,12);
+u8g.drawLine(100,12,125,0);
+u8g.drawLine(125,0,106,25);
+u8g.drawLine(10, 31, 30, 40);
+u8g.drawLine(30, 40,26,57);
+u8g.drawLine(26,57,40,45);
+u8g.drawLine(40,45,47,59);
+u8g.drawLine(47,59,56,47);
+u8g.drawLine(56,47,65,64);
+u8g.drawLine(65,64,75,47);
+u8g.drawLine(75,47,84,60);
+u8g.drawLine(84,60,90,49);
+u8g.drawLine(90,49,105,61);
+u8g.drawLine(105,61,102,44);
+u8g.drawLine(102,44,128,36);
+u8g.drawLine(128,36,106,25);
+  } while( u8g.nextPage() );
+}
+
+void C_cyale_1(){//RUSH当たり
+play(0x0f);
+delay(15500);
+n_spv_4();
+ stateZ = LOW;
+ stateD = LOW;
+while(stateZ == LOW && stateD == LOW){
+stateZ =digitalRead(10);
+stateD = digitalRead(2);                // read
+   if ( stateD == 1 && stateF == 0 ) // plus count
+     stateF = stateD;
+delay(10);
+}
+digitalWrite(11,HIGH); 
+digitalWrite(7,HIGH); 
+delay(1000);
+digitalWrite(7,LOW);
+v_blank();
+v_gogo();
+play(0x12);//yatta-
+delay(4500);
+delay(1500);
+}
+
+void C_cyale_2(){//RUSHハズレ
+play(0x0f);
+delay(15500);
+n_spv_4();
+ stateZ = LOW;
+ stateD = LOW;
+while(stateZ == LOW && stateD == LOW){
+stateZ =digitalRead(10);
+stateD = digitalRead(2);                // read
+   if ( stateD == 1 && stateF == 0 ) // plus count
+     stateF = stateD;
+delay(10);
+}
+v_blank();
+delay(500);
+play(0x15);//
+delay(1000);//ハズレ音
+delay(1500);
+}
+
+void s_reset(){
+digitalWrite(3,LOW);
+digitalWrite(4,LOW);
+digitalWrite(5,HIGH); 
+digitalWrite(6,LOW); 
+digitalWrite(7,LOW);  
+digitalWrite(8,LOW); 
+digitalWrite(9,LOW); 
+play(0x00);
+delay(30);
+}
+
+void n_loss(){ //低テーブル用
+digitalWrite(11,LOW); 
+digitalWrite(3,LOW);
+digitalWrite(4,LOW); 
+digitalWrite(5,LOW); 
+digitalWrite(6,HIGH); 
+digitalWrite(7,LOW);  
+digitalWrite(8,LOW); 
+digitalWrite(9,LOW); 
+play(0x07);
+delay(1500);
+v_blank();
+delay(200);
+play(0x09);
+delay(700);
+digitalWrite(11,LOW);
+o_rush = 0;
+big_p = 0;
+k= 0;
+reg_p = 0;
+i=0;
+game_c++;
+}
+void n_loss11(){ //itigeki
+digitalWrite(11,LOW); 
+digitalWrite(3,LOW);
+digitalWrite(4,LOW); 
+digitalWrite(5,LOW); 
+digitalWrite(6,HIGH); 
+digitalWrite(7,LOW);  
+digitalWrite(8,LOW); 
+digitalWrite(9,LOW); 
+v_blank();
+v_freeze();
+play(0x0d); //itigeki
+delay(13000); 
+o_rush = 0;
+big_p = 0;
+reg_p = 0;
+i=0;
+game_c++;
+}
+void n_loss1(){//シード初期化低
+digitalWrite(11,LOW); 
+digitalWrite(3,LOW);
+digitalWrite(4,LOW); 
+digitalWrite(5,LOW); 
+digitalWrite(6,HIGH); 
+digitalWrite(7,LOW);  
+digitalWrite(8,LOW); 
+digitalWrite(9,LOW); 
+play(0x07);
+delay(1500);
+randomSeed(analogRead(3));
+v_blank();
+play(0x0c);
+delay(1500);
+play(0x09);
+delay(700);
+digitalWrite(11,LOW); 
+o_rush = 0;
+big_p = 0;
+reg_p = 0;
+k= 0;
+i=0;
+game_c++;
+}
+
+void n_loss3(){ //高テーブル用
+digitalWrite(11,LOW); 
+digitalWrite(3,LOW);
+digitalWrite(4,LOW); 
+digitalWrite(5,LOW); 
+digitalWrite(6,HIGH); 
+digitalWrite(7,LOW);  
+digitalWrite(8,LOW); 
+digitalWrite(9,LOW); 
+play(0x07);
+delay(1500);
+v_blank();
+delay(200);
+play(0x09);
+delay(700);
+game_c++;
+}
+void n_loss23(){ //高テーブル用okure
+digitalWrite(11,LOW); 
+digitalWrite(3,LOW);
+digitalWrite(4,LOW); 
+digitalWrite(5,LOW); 
+digitalWrite(6,HIGH); 
+digitalWrite(7,LOW);  
+digitalWrite(8,LOW); 
+digitalWrite(9,LOW); 
+delay(600);
+play(0x07);
+delay(1500);
+v_blank();
+delay(200);
+play(0x09);
+delay(700);
+game_c++;
+}
+void n_loss13(){ //高テーブル用itigeki
+digitalWrite(11,LOW); 
+digitalWrite(3,LOW);
+digitalWrite(4,LOW); 
+digitalWrite(5,LOW); 
+digitalWrite(6,HIGH); 
+digitalWrite(7,LOW);  
+digitalWrite(8,LOW); 
+digitalWrite(9,LOW); 
+v_blank();
+v_freeze();
+play(0x0d); //itigeki
+delay(13000); 
+game_c++;
+}
+void n_loss4(){//シード初期化高
+digitalWrite(11,LOW); 
+digitalWrite(3,LOW);
+digitalWrite(4,LOW); 
+digitalWrite(5,LOW); 
+digitalWrite(6,HIGH); 
+digitalWrite(7,LOW);  
+digitalWrite(8,LOW); 
+digitalWrite(9,LOW); 
+play(0x07);
+delay(1500);
+randomSeed(analogRead(3));
+v_blank();
+play(0x0c);
+delay(1500);
+play(0x09);
+delay(700);
+game_c++;
+}
+
+void n_loss5(){//rush
+digitalWrite(3,LOW);
+digitalWrite(4,LOW); 
+digitalWrite(7,LOW);  
+digitalWrite(8,LOW); 
+digitalWrite(9,LOW); 
+digitalWrite(6,LOW); 
+o_br=0;
+game_c++;
+}
+
+void n_loss6(){//時短用
+digitalWrite(11,LOW); 
+digitalWrite(3,LOW);
+digitalWrite(4,LOW); 
+digitalWrite(7,LOW);  
+digitalWrite(8,LOW); 
+digitalWrite(9,LOW); 
+digitalWrite(6,LOW); 
+big_p = 0;
+reg_p = 0;
+o_rush = 0;
+i=0;
+game_c++;
+}
+
+void n_big1(){ //デフォルトBIG曲
+digitalWrite(6,HIGH);  
+digitalWrite(3,HIGH);  
+digitalWrite(5,LOW);  
+play(0x13);
+delay(2300); 
+v_blank();
+delay(200);
+v_BIG();
+delay(400);
+play(0x01);
+delay(39500);
+digitalWrite(3,LOW); 
+digitalWrite(9,HIGH);
+v_blank();
+delay(1500);
+}
+
+void n_reg1(){
+digitalWrite(6,HIGH); 
+digitalWrite(4,HIGH);  
+digitalWrite(5,LOW);  
+play(0x07);
+delay(1500); 
+v_blank();
+delay(200);
+v_reg();
+delay(500);
+play(0x06);
+delay(21500);
+digitalWrite(4,LOW); 
+digitalWrite(9,HIGH);
+v_blank();
+delay(1500);
+}
+
+void v_BIG(){
+  u8g.firstPage();  
+  do {
+     u8g.setColorIndex(1);
+u8g.drawStr( 21, 27, "BIG");
+u8g.drawStr( 21, 55, "BONUS");
+} while ( u8g.nextPage() );
+}
+
+void v_reg(){
+    u8g.firstPage();  
+  do {
+     u8g.setColorIndex(1);
+u8g.drawStr( 21, 27, "REG");
+u8g.drawStr( 21, 55, "BONUS");
+} while ( u8g.nextPage() );
+}
+
+void v_blank(){
+    u8g.firstPage();  
+  do {
+ u8g.setColorIndex(0);
+u8g.drawBox(0, 0, 128, 64);
+  } while( u8g.nextPage() );
+}
+
+void v_cherry(){
+  u8g.firstPage();  
+  do {
+     u8g.setColorIndex(1);
+u8g.drawStr( 21, 60, "cherry");
+u8g.drawEllipse(93, 22, 14, 6);
+u8g.drawEllipse(98, 34, 15, 6);
+u8g.drawLine(80, 24, 97, 22);
+u8g.drawLine(80, 35, 105, 34);
+u8g.drawFilledEllipse(67, 14, 11, 11);
+u8g.drawFilledEllipse(78, 34, 13, 13);
+u8g.drawFilledEllipse(53, 34, 12, 12);
+  } while( u8g.nextPage() );  
+}
+
+void e_cherry(){ 
+digitalWrite(3,LOW);
+digitalWrite(4,LOW); 
+digitalWrite(5,LOW); 
+digitalWrite(6,HIGH); 
+digitalWrite(7,LOW);  
+digitalWrite(8,LOW); 
+digitalWrite(9,LOW); 
+//digitalWrite(11,LOW); 
+play(0x07);
+delay(1500);
+v_blank(); 
+delay(200);
+v_cherry();
+delay(200);
+play(0x0a);//n_cherry
+delay(1000);
+play(0x09);
+delay(700);
+game_c++;
+}
+
+void esp_cherry(){  
+digitalWrite(3,LOW);
+digitalWrite(4,LOW); 
+digitalWrite(5,LOW); 
+digitalWrite(6,HIGH); 
+digitalWrite(7,LOW);  
+digitalWrite(8,LOW); 
+digitalWrite(9,LOW); 
+digitalWrite(11,LOW); 
+play(0x07);
+delay(1500);
+v_blank(); 
+delay(200);
+v_cherry();
+delay(200);
+play(0x0b);//sp_cherry
+delay(1400);
+play(0x09);
+delay(700);
+game_c++;
+}
+void n_loss51(){//rush 短レバ
+digitalWrite(3,LOW);
+digitalWrite(4,LOW); 
+digitalWrite(7,LOW);  
+digitalWrite(8,LOW); 
+digitalWrite(9,LOW); 
+digitalWrite(6,LOW);
+play(0x08);
+delay(1000);
+o_br=0;
+game_c++;
+}
+void n_loss52(){//rush短レバwait
+digitalWrite(3,LOW);
+digitalWrite(4,LOW); 
+digitalWrite(7,LOW);  
+digitalWrite(8,LOW); 
+digitalWrite(9,LOW); 
+digitalWrite(6,LOW); 
+play(0x08);
+delay(1000);
+play(0x0c);
+delay(2500);
+o_br=0;
+game_c++;
+}
+
+void n_loss53(){//rush短レバ*2wait
+digitalWrite(3,LOW);
+digitalWrite(4,LOW); 
+digitalWrite(7,LOW);  
+digitalWrite(8,LOW); 
+digitalWrite(9,LOW); 
+digitalWrite(6,LOW); 
+play(0x08);
+delay(2000);
+play(0x08);
+delay(1000);
+play(0x0c);
+delay(2500);
+o_br=0;
+game_c++;
+}
+
+void n_loss54(){//rushレバロング
+digitalWrite(3,LOW);
+digitalWrite(4,LOW); 
+digitalWrite(7,LOW);  
+digitalWrite(8,LOW); 
+digitalWrite(9,LOW); 
+digitalWrite(6,LOW); 
+play(0x07);
+delay(3500);
+o_br=0;
+game_c++;
+}
+
+void n_loss55(){//rush押して
+play(0x10);
+delay(1300);
+s_reset();
+ stateZ = LOW;
+ stateD = LOW;
+while(stateZ == LOW && stateD == LOW){
+stateZ =digitalRead(10);
+stateD = digitalRead(2);                // read
+   if ( stateD == 1 && stateF == 0 ) // plus count
+     stateF = stateD;
+delay(10);
+}
+}
+
+void n_loss56(){//rush直当たり
+digitalWrite(6,HIGH);  
+digitalWrite(3,HIGH);  
+digitalWrite(5,LOW);  
+digitalWrite(7,HIGH); 
+delay(1000);
+digitalWrite(7,LOW); 
+play(0x11);
+delay(12500); 
+v_blank();
+delay(200);
+v_BIG();
+delay(400);
+k++;
+loop_big_s(k);
+if(k>=5){  
+k=0;
+}
+digitalWrite(3,LOW); 
+digitalWrite(9,HIGH);
+v_blank();
+delay(1000);
+vmode = 7;
+big_p++;
+game_c = 0;
+}
+void n_loss566(){ //1G
+digitalWrite(3,HIGH);  
+digitalWrite(6,HIGH); 
+digitalWrite(5,LOW);  
+digitalWrite(7,HIGH); 
+delay(1000);
+digitalWrite(7,LOW); 
+play(0x11);//sugoi
+delay(12500);
+v_blank();
+delay(200);
+v_BIG();
+delay(400);
+k++;
+loop_big_s(k);
+if(k>=5){  
+k=0;
+}
+digitalWrite(3,LOW); 
+digitalWrite(9,HIGH);
+v_blank();
+delay(500);
+vmode = 7;
+big_p++;
+game_c = 0;
+
+play(0x12);//yatta-
+delay(4500);
+digitalWrite(3,LOW);//reset
+digitalWrite(4,LOW);
+digitalWrite(5,HIGH); 
+digitalWrite(6,LOW); 
+digitalWrite(7,LOW);  
+digitalWrite(8,LOW); 
+digitalWrite(9,LOW); 
+play(0x00);
+delay(30);
+ stateZ = LOW;
+ stateD = LOW;
+while(stateZ == LOW && stateD == LOW){
+stateZ =digitalRead(10);
+stateD = digitalRead(2);                // read
+   if ( stateD == 1 && stateF == 0 ) // plus count
+     stateF = stateD;
+delay(10);
+}
+digitalWrite(11,LOW); 
+digitalWrite(3,HIGH);  
+digitalWrite(6,HIGH); 
+digitalWrite(5,LOW);  
+play(0x13);
+delay(2300); 
+v_blank();
+delay(200);
+v_BIG();
+delay(400);
+play(0x14);//version up
+delay(43500);
+digitalWrite(3,LOW); 
+digitalWrite(9,HIGH);
+v_blank();
+delay(500);
+vmode = 7;
+big_p++;
+game_c = 0;
+}
+
+void n_loss57(){//rush 	バイブ
+digitalWrite(3,LOW);
+digitalWrite(4,LOW); 
+digitalWrite(7,LOW);  
+digitalWrite(8,LOW); 
+digitalWrite(9,LOW); 
+digitalWrite(6,LOW);
+digitalWrite(7,HIGH); 
+delay(1000);
+digitalWrite(7,LOW);
+o_br=0;
+game_c++;
+}
+void n_loss58(){//rush短レバ*2
+digitalWrite(3,LOW);
+digitalWrite(4,LOW); 
+digitalWrite(7,LOW);  
+digitalWrite(8,LOW); 
+digitalWrite(9,LOW); 
+digitalWrite(6,LOW); 
+play(0x08);
+delay(2000);
+play(0x08);
+delay(1000);
+o_br=0;
+game_c++;
+}
+void big_pr(){
+digitalWrite(3,HIGH);  
+digitalWrite(6,HIGH); 
+digitalWrite(5,LOW); 
+play(0x13);
+delay(1500); 
+v_blank();
+delay(200);
+v_BIG();
+delay(400);
+}
+void big_av(){
+digitalWrite(3,LOW); 
+digitalWrite(9,HIGH);
+v_blank();
+delay(500);
+vmode = 7;
+big_p++;
+o_br++;
+o_rush = 1;
+C_cyale_1();
+game_c = 0;
+}
+void big_af(){
+digitalWrite(3,LOW); 
+digitalWrite(9,HIGH);
+v_blank();
+delay(500);
+vmode = 7;
+big_p++;
+o_br++;
+if (game_c >= 799){//ゲーム数７９９以上はRUSH
+o_rush = 1;
+C_cyale_1();
+}
+else if (o_br >= 10){//両ボーナス１０回以上でRUSH
+o_rush = 1;
+C_cyale_1();
+}
+else{
+C_cyale_2();
+}
+game_c = 0;
+}
+
+void nn_reg(){
+n_reg1();
+vmode = 7;
+reg_p++;
+o_br++;
+if (game_c >= 799){//ゲーム数７９９以上はRUSH
+o_rush = 1;
+C_cyale_1();
+}
+else if (o_br >= 10){//両ボーナス１０回以上でRUSH
+o_rush = 1;
+C_cyale_1();
+}
+else{
+}
+game_c = 0;
+}
+
+void nn_big(){
+n_big1();
+vmode = 7;
+big_p++;
+o_br++;
+if (game_c >= 799){//ゲーム数７９９以上はRUSH
+o_rush = 1;
+C_cyale_1();
+}
+else if (o_br >= 10){//両ボーナス１０回以上でRUSH
+o_rush = 1;
+C_cyale_1();
+}
+else{
+C_cyale_2();
+}
+game_c = 0;
+}
+void nm_reg(){
+n_reg1();
+vmode = 7;
+o_br++;
+reg_p++;
+if (game_c >= 799){//ゲーム数７９９以上はRUSH
+o_rush = 1;
+C_cyale_1();
+}
+else if (o_br >= 10){//両ボーナス１０回以上でRUSH
+o_rush = 1;
+C_cyale_1();
+}
+else{
+}
+game_c = 0;
+}
+void v_freeze(){
+  u8g.firstPage();  
+  do {
+        u8g.setColorIndex(1);         // pixel on
+        u8g.drawBox(0,0, 128, 64);   // 四角
+        u8g.setColorIndex(0);         // pixel off
+        u8g.drawFilledEllipse(63, 30, 5, 5);  // 丸
+        
+        u8g.drawBox(25, 28, 80, 4);//15 90
+           u8g.drawBox(0, 29, 128, 2);
+        u8g.drawBox(62, 20, 4, 25);
+         u8g.drawBox(63, 10, 2, 45);
+        u8g.setColorIndex(1);         // pixel on
+  } while( u8g.nextPage() );
+}
+
+void play(unsigned char Track)
+{
+ unsigned char play[6] = {0xAA,0x07,0x02,0x00,Track,Track+0xB3};
+   Serial1.write(play,6);
+}
+void volume( unsigned char vol)
+{
+  unsigned char volume[5] = {0xAA,0x13,0x01,vol,vol+0xBE};
+     Serial1.write(volume,5);
+ }
+void statu( unsigned char sta)
+{
+  unsigned char statu[5] = {0xAA,0x01,0x00,sta,sta+0xAB};
+     Serial1.write(statu,5);
+ }
+
